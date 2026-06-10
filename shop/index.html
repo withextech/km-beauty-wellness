@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="KM Beauty & Wellness online shop for Her Skin, Neco, and Sevendays.">
+  <title>KM Shop</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="shop-shell">
+    <aside class="sidebar" aria-label="Shop navigation">
+      <a class="brand-lockup" href="./" aria-label="KM Shop home">
+        <img src="assets/km-logo-cropped.png" alt="KM">
+        <span>Beauty & Wellness Shop</span>
+      </a>
+      <nav class="brand-tabs" aria-label="Brands">
+        <button class="active all-brand" data-brand="all"><span>All brands</span></button>
+        <button data-brand="Her Skin">Her Skin</button>
+        <button data-brand="Neco">Neco</button>
+        <button data-brand="Sevendays">Sevendays</button>
+      </nav>
+      <div class="sidebar-live-mini" data-sidebar-live hidden>
+        <img src="assets/live-selling-portrait.png" alt="Her Skin live selling preview">
+      </div>
+    </aside>
+
+    <main>
+      <header class="shop-header">
+        <div class="header-actions">
+          <button class="auth-link" type="button" data-auth="signin">Sign in</button>
+          <button class="auth-link filled" type="button" data-auth="register">Register</button>
+          <button class="cart-button" data-cart-open aria-label="Open cart">
+            <span class="bag-icon" aria-hidden="true"></span>
+            <b data-cart-count>0</b>
+          </button>
+        </div>
+      </header>
+
+      <section class="hero-panel live-panel" aria-label="Live selling">
+        <div class="hero-copy">
+          <span class="live-label"><i></i> Live selling studio</span>
+          <h2>Watch, claim, and checkout in one place.</h2>
+          <p>Host live selling sessions for Her Skin drops, product demos, bundles, and limited-time checkout offers.</p>
+          <div class="hero-actions">
+            <button class="primary-action" data-scroll-products>Shop live picks</button>
+            <button class="quiet-action" data-brand-shortcut="Her Skin">View Her Skin catalog</button>
+          </div>
+          <div class="live-stats" aria-label="Live selling details">
+            <p><b>1.2K</b><span>watching</span></p>
+            <p><b>24</b><span>claims today</span></p>
+            <p><b>10%</b><span>live code</span></p>
+          </div>
+        </div>
+        <div class="live-stage">
+          <div class="phone-frame">
+            <img src="assets/live-selling-portrait.png" alt="Portrait sample Her Skin live selling stream">
+            <div class="video-topbar">
+              <span><i></i> Live</span>
+              <b>1.2K</b>
+            </div>
+            <div class="video-claim">Mine + checkout</div>
+          </div>
+          <div class="live-card">
+            <span>Now claiming</span>
+            <strong>Secret Glow Water Gel Hydrator</strong>
+            <b>₱199</b>
+          </div>
+          <div class="chat-card">
+            <p><b>Mia</b> Mine 2 SPF45 please</p>
+            <p><b>Host</b> Use code KMLOVE at checkout</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="store-tools" id="products">
+        <label class="search-box">
+          <span>Search</span>
+          <input type="search" data-search placeholder="Cleanser, SPF, toner...">
+        </label>
+        <label>
+          <span>Concern</span>
+          <select data-concern>
+            <option value="all">All concerns</option>
+            <option value="hydrate">Hydrate</option>
+            <option value="brighten">Brighten</option>
+            <option value="cleanse">Cleanse</option>
+            <option value="sun-care">Sun care</option>
+            <option value="body-care">Body care</option>
+            <option value="wellness">Wellness</option>
+          </select>
+        </label>
+        <label>
+          <span>Sort</span>
+          <select data-sort>
+            <option value="featured">Featured</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="name">Name</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="catalog-status" aria-live="polite">
+        <p><b data-result-count>0</b> products shown</p>
+        <button data-clear-filters>Clear filters</button>
+      </section>
+
+      <section class="product-grid" data-product-grid aria-label="Products"></section>
+
+    </main>
+  </div>
+
+  <div class="shade" data-shade></div>
+
+  <aside class="cart-drawer" data-cart-drawer aria-label="Shopping cart" aria-hidden="true">
+    <div class="drawer-head">
+      <div>
+        <span>Your bag</span>
+        <h2 data-drawer-title>Your cart</h2>
+      </div>
+      <button data-cart-close aria-label="Close cart">×</button>
+    </div>
+    <section class="cart-step" data-cart-step>
+      <div class="cart-items" data-cart-items></div>
+      <div class="cart-summary">
+        <p><span>Subtotal</span><b data-cart-subtotal>₱0</b></p>
+        <button class="checkout-button" type="button" data-proceed-checkout>Proceed to checkout</button>
+      </div>
+    </section>
+    <section class="checkout-step" data-checkout-step hidden>
+      <button class="back-button" type="button" data-back-cart>← Back to cart</button>
+      <form class="checkout-form" data-checkout-form>
+        <label>
+          <span>Promo code</span>
+          <div class="promo-row">
+            <input type="text" data-promo placeholder="KMLOVE">
+            <button type="button" data-apply-promo>Apply</button>
+          </div>
+        </label>
+        <div class="totals">
+          <p><span>Subtotal</span><b data-subtotal>₱0</b></p>
+          <p><span>Shipping estimate</span><b data-shipping>₱0</b></p>
+          <p><span>Discount</span><b data-discount>₱0</b></p>
+          <p class="grand"><span>Total</span><b data-total>₱0</b></p>
+        </div>
+        <label>
+          <span>Full name</span>
+          <input required type="text" placeholder="Customer name">
+        </label>
+        <label>
+          <span>Mobile number</span>
+          <input required type="tel" placeholder="+63">
+        </label>
+        <label>
+          <span>Delivery address</span>
+          <textarea required placeholder="Street, barangay, city, province"></textarea>
+        </label>
+        <label>
+          <span>Payment method</span>
+          <select>
+            <option>Cash on delivery</option>
+            <option>GCash</option>
+            <option>Maya</option>
+            <option>Bank transfer</option>
+          </select>
+        </label>
+        <button class="checkout-button" type="submit">Place order</button>
+      </form>
+    </section>
+  </aside>
+
+  <section class="product-modal" data-modal aria-hidden="true" role="dialog" aria-modal="true" aria-label="Product details">
+    <button class="modal-close" data-modal-close aria-label="Close product details">×</button>
+    <div data-modal-content></div>
+  </section>
+
+  <section class="auth-modal" data-auth-modal aria-hidden="true" role="dialog" aria-modal="true" aria-label="Account access">
+    <button class="modal-close" data-auth-close aria-label="Close account form">×</button>
+    <form class="auth-form" data-auth-form>
+      <span data-auth-kicker>Welcome back</span>
+      <h2 data-auth-title>Sign in</h2>
+      <label data-name-field hidden>
+        <span>Full name</span>
+        <input type="text" placeholder="Your name">
+      </label>
+      <label>
+        <span>Email address</span>
+        <input required type="email" placeholder="you@example.com">
+      </label>
+      <label>
+        <span>Password</span>
+        <input required type="password" placeholder="Password">
+      </label>
+      <button class="checkout-button" type="submit" data-auth-submit>Sign in</button>
+    </form>
+  </section>
+
+  <div class="toast" data-toast></div>
+
+  <script src="products.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

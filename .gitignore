@@ -1,0 +1,6 @@
+.DS_Store
+outputs/
+*.key
+*.pptx
+node_modules/
+.vercel/

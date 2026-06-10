@@ -1,0 +1,13 @@
+const bag=document.querySelector('.bag'),cart=document.querySelector('.cart'),shade=document.querySelector('.shade'),closeCart=document.querySelector('.cart-close'),cartItems=document.querySelector('.cart-items'),toast=document.querySelector('.toast');let total=0;
+function openCart(show){if(!cart)return;cart.classList.toggle('open',show);shade.classList.toggle('show',show)}
+bag?.addEventListener('click',()=>openCart(true));closeCart?.addEventListener('click',()=>openCart(false));shade?.addEventListener('click',()=>openCart(false));
+document.querySelectorAll('.quick').forEach(btn=>btn.addEventListener('click',()=>window.open('shop/','_blank','noopener')));
+document.querySelectorAll('.filters button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.product').forEach(p=>p.style.display=btn.dataset.filter==='all'||p.dataset.brand===btn.dataset.filter?'block':'none')}));
+document.querySelectorAll('form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();toast.textContent='Thanks! We received it.';toast.classList.add('show');form.reset();setTimeout(()=>toast.classList.remove('show'),2000)}));
+document.querySelector('.menu')?.addEventListener('click',()=>document.querySelector('.header').classList.toggle('nav-open'));
+const carousel=document.querySelector('.hero-carousel');
+if(carousel){const slides=[...carousel.querySelectorAll('.hero-slide')],dots=[...carousel.querySelectorAll('.carousel-dots button')];let current=0,timer,touchStart=0;const showSlide=index=>{current=(index+slides.length)%slides.length;slides.forEach((slide,i)=>slide.classList.toggle('active',i===current));dots.forEach((dot,i)=>dot.classList.toggle('active',i===current))};const start=()=>{clearInterval(timer);timer=setInterval(()=>showSlide(current+1),6500)};dots.forEach((dot,i)=>dot.addEventListener('click',()=>{showSlide(i);start()}));carousel.addEventListener('touchstart',e=>touchStart=e.touches[0].clientX,{passive:true});carousel.addEventListener('touchend',e=>{const diff=e.changedTouches[0].clientX-touchStart;if(Math.abs(diff)>45){showSlide(current+(diff<0?1:-1));start()}},{passive:true});start()}
+const homeHeader=document.querySelector('.home-header');
+if(homeHeader){const setHeader=()=>homeHeader.classList.toggle('scrolled',scrollY>35);addEventListener('scroll',setHeader,{passive:true});setHeader()}
+const brandObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');brandObserver.unobserve(entry.target)}}),{threshold:.18});
+document.querySelectorAll('.reveal-brand').forEach(card=>brandObserver.observe(card));

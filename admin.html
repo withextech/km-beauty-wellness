@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KM Admin Management System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<aside class="admin-sidebar">
+  <a class="admin-brand" href="index.html">
+    <img src="assets/km-logo-cropped.png" alt="KM Beauty & Wellness">
+    <span>Admin Suite</span>
+  </a>
+  <nav class="admin-menu" aria-label="Admin navigation">
+    <a class="active" href="#"><span>⌂</span>Dashboard</a>
+    <a href="#"><span>◷</span>Orders</a>
+    <a href="#"><span>◫</span>Products</a>
+    <a href="#"><span>▦</span>Inventory</a>
+    <a href="#"><span>◎</span>Customers</a>
+    <a href="partner-portal.html"><span>◇</span>Partner Portal</a>
+    <a href="#"><span>⇄</span>Marketplace Hub</a>
+    <a href="#"><span>✦</span>Marketing</a>
+    <a href="#"><span>▣</span>Website CMS</a>
+    <a href="#"><span>☷</span>Reports</a>
+    <a href="#"><span>⚙</span>Settings</a>
+  </nav>
+</aside>
+
+<main class="admin-shell">
+  <header class="admin-topbar">
+    <div>
+      <span class="eyebrow">KM Beauty & Wellness</span>
+      <h1>Dashboard</h1>
+      <p>Track sales, orders, inventory, partners, and marketplace performance in one workspace.</p>
+    </div>
+    <div class="topbar-actions">
+      <button>Export Report</button>
+      <button class="primary">Create Campaign</button>
+    </div>
+  </header>
+
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <span>Total Sales</span>
+      <strong>₱1.84M</strong>
+      <small class="up">+18.4% vs last month</small>
+    </article>
+    <article class="kpi-card">
+      <span>Orders</span>
+      <strong>4,286</strong>
+      <small class="up">+312 this week</small>
+    </article>
+    <article class="kpi-card">
+      <span>Conversion Rate</span>
+      <strong>7.8%</strong>
+      <small class="up">+1.2% uplift</small>
+    </article>
+    <article class="kpi-card alert">
+      <span>Low Stock SKUs</span>
+      <strong>12</strong>
+      <small>Needs reorder review</small>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="panel sales-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Revenue trend</span>
+          <h2>Sales Performance</h2>
+        </div>
+        <b>Last 30 days</b>
+      </div>
+      <svg class="line-chart" viewBox="0 0 680 260" role="img" aria-label="Sales performance line graph">
+        <defs>
+          <linearGradient id="salesFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#6dd5e4" stop-opacity=".35"/>
+            <stop offset="100%" stop-color="#6dd5e4" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path class="area" d="M20 205 C90 190 110 130 170 145 C240 162 255 80 320 96 C390 114 410 68 470 78 C540 88 560 42 650 48 L650 245 L20 245 Z"/>
+        <path class="line" d="M20 205 C90 190 110 130 170 145 C240 162 255 80 320 96 C390 114 410 68 470 78 C540 88 560 42 650 48"/>
+        <g class="grid-lines">
+          <line x1="20" y1="55" x2="650" y2="55"/><line x1="20" y1="115" x2="650" y2="115"/><line x1="20" y1="175" x2="650" y2="175"/><line x1="20" y1="235" x2="650" y2="235"/>
+        </g>
+      </svg>
+    </article>
+
+    <article class="panel channel-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Marketplace hub</span>
+          <h2>Channel Sales</h2>
+        </div>
+      </div>
+      <div class="channel-list">
+        <div><span>TikTok Shop</span><b>42%</b><i style="--w:42%"></i></div>
+        <div><span>Shopee</span><b>31%</b><i style="--w:31%"></i></div>
+        <div><span>Website</span><b>18%</b><i style="--w:18%"></i></div>
+        <div><span>Resellers</span><b>9%</b><i style="--w:9%"></i></div>
+      </div>
+    </article>
+
+    <article class="panel orders-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Fulfillment</span>
+          <h2>Recent Orders</h2>
+        </div>
+        <a href="#">View all</a>
+      </div>
+      <table>
+        <thead><tr><th>Order</th><th>Customer</th><th>Channel</th><th>Status</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>#KM-1048</td><td>Bianca R.</td><td>TikTok</td><td><span class="status paid">Paid</span></td><td>₱2,490</td></tr>
+          <tr><td>#KM-1047</td><td>Leah M.</td><td>Website</td><td><span class="status ship">To Ship</span></td><td>₱1,240</td></tr>
+          <tr><td>#KM-1046</td><td>Reseller Batch</td><td>Portal</td><td><span class="status review">Review</span></td><td>₱18,900</td></tr>
+          <tr><td>#KM-1045</td><td>Janelle P.</td><td>Shopee</td><td><span class="status paid">Paid</span></td><td>₱860</td></tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel inventory-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Inventory</span>
+          <h2>Stock Watchlist</h2>
+        </div>
+      </div>
+      <div class="stock-list">
+        <div><b>Sun Defense SPF45</b><span>84 left</span></div>
+        <div><b>Nekocee Vitamin C</b><span class="warn">28 left</span></div>
+        <div><b>Sevendays Power Soap</b><span>121 left</span></div>
+        <div><b>Secret Glow Cleanser</b><span class="warn">35 left</span></div>
+      </div>
+    </article>
+
+    <article class="panel partner-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Partner Portal</span>
+          <h2>Top Partners</h2>
+        </div>
+      </div>
+      <ol class="partner-list">
+        <li><span>01</span><b>Glow Hub Manila</b><em>₱126K</em></li>
+        <li><span>02</span><b>Beauty Basket PH</b><em>₱92K</em></li>
+        <li><span>03</span><b>KatFam Cebu</b><em>₱75K</em></li>
+      </ol>
+    </article>
+
+    <article class="panel campaign-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">Marketing</span>
+          <h2>Live Campaigns</h2>
+        </div>
+      </div>
+      <div class="campaign-card">
+        <span>6.16 Glow Sale</span>
+        <strong>₱420K attributed revenue</strong>
+        <p>Running across website, TikTok Shop, Shopee, and partner codes.</p>
+      </div>
+    </article>
+  </section>
+</main>
+</body>
+</html>
