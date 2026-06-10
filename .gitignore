@@ -4,3 +4,4 @@ outputs/
 *.pptx
 node_modules/
 .vercel/
+.vercel

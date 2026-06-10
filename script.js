@@ -1,7 +1,7 @@
 const bag=document.querySelector('.bag'),cart=document.querySelector('.cart'),shade=document.querySelector('.shade'),closeCart=document.querySelector('.cart-close'),cartItems=document.querySelector('.cart-items'),toast=document.querySelector('.toast');let total=0;
 function openCart(show){if(!cart)return;cart.classList.toggle('open',show);shade.classList.toggle('show',show)}
 bag?.addEventListener('click',()=>openCart(true));closeCart?.addEventListener('click',()=>openCart(false));shade?.addEventListener('click',()=>openCart(false));
-document.querySelectorAll('.quick').forEach(btn=>btn.addEventListener('click',()=>window.open('shop/','_blank','noopener')));
+document.querySelectorAll('.quick').forEach(btn=>btn.addEventListener('click',()=>window.open('/shop','_blank','noopener')));
 document.querySelectorAll('.filters button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelectorAll('.product').forEach(p=>p.style.display=btn.dataset.filter==='all'||p.dataset.brand===btn.dataset.filter?'block':'none')}));
 document.querySelectorAll('form').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();toast.textContent='Thanks! We received it.';toast.classList.add('show');form.reset();setTimeout(()=>toast.classList.remove('show'),2000)}));
 document.querySelector('.menu')?.addEventListener('click',()=>document.querySelector('.header').classList.toggle('nav-open'));
