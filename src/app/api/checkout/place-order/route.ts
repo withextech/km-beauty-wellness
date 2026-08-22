@@ -22,6 +22,24 @@ export async function POST(request: Request) {
       : [];
     if (!lines.length) return Response.json({ message: "Your cart is empty." }, { status: 400 });
 
+    const regions = await serverMedusaRequest<{ regions: Array<{ id: string; currency_code: string }> }>("/store/regions?limit=100");
+    const regionId = regions.regions.find((region) => region.currency_code.toLowerCase() === "php")?.id;
+    if (!regionId) throw new Error("Philippine checkout is not configured.");
+    const catalog = await serverMedusaRequest<{ products: Array<{ title: string; variants?: Array<{ id: string; inventory_quantity?: number; allow_backorder?: boolean }> }> }>(
+      `/store/products?limit=100&region_id=${encodeURIComponent(regionId)}&fields=title,*variants,+variants.inventory_quantity,+variants.allow_backorder`,
+    );
+    const inventory = new Map(catalog.products.flatMap((product) => (product.variants || []).map((variant) => [variant.id, {
+      available: variant.allow_backorder ? Number.POSITIVE_INFINITY : Math.max(0, Number(variant.inventory_quantity || 0)),
+      title: product.title,
+    }] as const)));
+    for (const line of lines) {
+      const variant = inventory.get(line.variant_id);
+      if (!variant) return Response.json({ message: "A product in your cart is no longer available." }, { status: 409 });
+      if (line.quantity > variant.available) {
+        return Response.json({ message: `${variant.title} only has ${variant.available} available. Please update your cart quantity.` }, { status: 409 });
+      }
+    }
+
     const address = body.address || {};
     const email = requiredText(address, "email");
     const shippingAddress = {
@@ -30,10 +48,6 @@ export async function POST(request: Request) {
       address_2: requiredText(address, "barangay"), city: requiredText(address, "city"),
       province: requiredText(address, "province"), postal_code: requiredText(address, "postal_code"), country_code: "ph",
     };
-
-    const regions = await serverMedusaRequest<{ regions: Array<{ id: string; currency_code: string }> }>("/store/regions?limit=100");
-    const regionId = regions.regions.find((region) => region.currency_code.toLowerCase() === "php")?.id;
-    if (!regionId) throw new Error("Philippine checkout is not configured.");
 
     const created = await serverMedusaRequest<{ cart: MedusaCart }>("/store/carts", {
       method: "POST", body: JSON.stringify({ email, region_id: regionId, shipping_address: shippingAddress }),

@@ -9,6 +9,7 @@ export type ProductModalVariant = {
   price: number | null;
   originalPrice: number | null;
   image: string;
+  inventoryQuantity: number;
 };
 
 export type ProductModalData = {
@@ -191,7 +192,7 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
               {variant?.originalPrice && variant.price !== null && variant.originalPrice > variant.price ? <del>{money.format(variant.originalPrice)}</del> : null}
               {variant?.sku ? <small>SKU {variant.sku}</small> : null}
             </div>
-            <button className="product-modal-cart" type="button" data-price={variant?.price ?? 0} data-name={`${product.title}${variant?.title ? ` · ${variant.title}` : ""}`} data-image={variant?.image || product.image} data-product-id={product.id} data-variant-id={variant?.id || ""} disabled={variant?.price === null || !variant?.id}>Add to cart</button>
+            <button className="product-modal-cart" type="button" data-price={variant?.price ?? 0} data-stock={variant?.inventoryQuantity ?? 0} data-name={`${product.title}${variant?.title ? ` · ${variant.title}` : ""}`} data-image={variant?.image || product.image} data-product-id={product.id} data-variant-id={variant?.id || ""} disabled={variant?.price === null || !variant?.id || !variant.inventoryQuantity}>{variant?.inventoryQuantity ? "Add to cart" : "Sold out"}</button>
             {details.length ? <dl className="product-modal-facts">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : null}
           </div>
         </div>

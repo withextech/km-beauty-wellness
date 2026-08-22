@@ -93,6 +93,16 @@ const formatPrice = (value) => `₱${value.toLocaleString("en-PH", {
 })}`;
 
 const renderCart = () => {
+  document.querySelectorAll("[data-price][data-stock]").forEach((button) => {
+    const variantId = button.dataset.variantId || "";
+    const line = cartItems.find((item) => item.variantId === variantId);
+    if (!line) return;
+    line.stock = Math.max(0, Number(button.dataset.stock) || 0);
+    line.quantity = Math.min(line.quantity, line.stock);
+  });
+  for (let index = cartItems.length - 1; index >= 0; index -= 1) {
+    if (cartItems[index].stock === 0) cartItems.splice(index, 1);
+  }
   localStorage.setItem("km-cart", JSON.stringify(cartItems));
   const cartValue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
@@ -133,7 +143,7 @@ const renderCart = () => {
             <div class="quantity-control" aria-label="Quantity for ${item.name}">
               <button type="button" data-cart-decrease="${index}" aria-label="Decrease quantity">−</button>
               <span>${item.quantity}</span>
-              <button type="button" data-cart-increase="${index}" aria-label="Increase quantity">+</button>
+              <button type="button" data-cart-increase="${index}" aria-label="Increase quantity" ${item.quantity >= item.stock ? "disabled" : ""}>+</button>
             </div>
           </div>
           <div class="cart-line-side">
@@ -150,7 +160,7 @@ const updateCartItem = (index, nextQuantity) => {
   if (nextQuantity <= 0) {
     cartItems.splice(index, 1);
   } else {
-    cartItems[index].quantity = nextQuantity;
+    cartItems[index].quantity = Math.min(nextQuantity, cartItems[index].stock || nextQuantity);
   }
   renderCart();
 };
@@ -222,15 +232,19 @@ document.addEventListener("click", (event) => {
     return;
   }
   if (existing) {
+    if (existing.quantity >= existing.stock) return;
     existing.quantity += 1;
   } else {
+    const stock = Math.max(0, Number(button.dataset.stock) || 0);
+    if (!stock) return;
     cartItems.push({
       name,
       price,
       quantity: 1,
       productId,
       variantId,
-      image: button.dataset.image || ""
+      image: button.dataset.image || "",
+      stock
     });
   }
   renderCart();

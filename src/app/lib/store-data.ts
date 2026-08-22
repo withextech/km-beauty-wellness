@@ -8,6 +8,7 @@ export type StoreProduct = {
   price: number;
   originalPrice: number;
   priceLabel: string;
+  inventoryQuantity: number;
 };
 
 export type HomepageCms = {
@@ -24,7 +25,7 @@ type ApiProduct = {
   id: string; title: string; handle: string; thumbnail?: string | null;
   images?: Array<{ url?: string | null }>;
   collection?: { title?: string | null } | null;
-  variants?: Array<{ id: string; calculated_price?: { calculated_amount?: number; original_amount?: number } | null; metadata?: { promo_price?: number | string | null } | null }>;
+  variants?: Array<{ id: string; inventory_quantity?: number; allow_backorder?: boolean; calculated_price?: { calculated_amount?: number; original_amount?: number } | null; metadata?: { promo_price?: number | string | null } | null }>;
 };
 
 function backend() {
@@ -58,7 +59,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
   const query = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,handle,thumbnail,*images,*collection,*variants.calculated_price,+variants.sku,+variants.metadata",
+    fields: "id,title,handle,thumbnail,*images,*collection,*variants,*variants.calculated_price,+variants.sku,+variants.metadata,+variants.inventory_quantity,+variants.allow_backorder",
   });
   const response = await fetch(`${backend()}/store/products?${query}`, {
     headers: headers(),
@@ -84,6 +85,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
       price,
       originalPrice: originalPrice || price,
       priceLabel: money.format(price),
+      inventoryQuantity: variant.allow_backorder ? 99 : Math.max(0, Number(variant.inventory_quantity || 0)),
     }];
   });
 }
@@ -102,6 +104,6 @@ export function escapeHtml(value: string) {
 }
 
 export function productButton(product: StoreProduct) {
-  return `data-price="${product.price}" data-name="${escapeHtml(product.title)}" data-image="${escapeHtml(product.image)}" data-product-id="${product.id}" data-variant-id="${product.variantId}"`;
+  return `data-price="${product.price}" data-stock="${product.inventoryQuantity}" data-name="${escapeHtml(product.title)}" data-image="${escapeHtml(product.image)}" data-product-id="${product.id}" data-variant-id="${product.variantId}"`;
 }
 import { MEDUSA_PUBLISHABLE_KEY, MEDUSA_URL } from "./medusa-config";

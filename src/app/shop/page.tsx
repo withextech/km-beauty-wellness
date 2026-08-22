@@ -22,6 +22,8 @@ type MedusaVariant = {
   sku?: string | null;
   calculated_price?: MedusaPrice | null;
   metadata?: { promo_price?: number | string | null } | null;
+  inventory_quantity?: number;
+  allow_backorder?: boolean;
   options?: Array<{
     value?: string | null;
     option?: { title?: string | null } | null;
@@ -79,6 +81,7 @@ type ShopProduct = {
   priceLabel: string;
   sku: string;
   order: number;
+  inventoryQuantity: number;
   modal: ProductModalData;
 };
 
@@ -178,6 +181,7 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
     priceLabel: pricing.price === null ? "Set price in Admin" : pesoFormatter.format(pricing.price),
     sku: variant?.sku || product.handle,
     order: index + 1,
+    inventoryQuantity: variant?.allow_backorder ? 99 : Math.max(0, Number(variant?.inventory_quantity || 0)),
     modal: {
       id: product.id,
       title: product.title,
@@ -209,6 +213,7 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
           price: itemPricing.price,
           originalPrice: itemPricing.originalPrice,
           image: images[0] || fallbackImage,
+          inventoryQuantity: item.allow_backorder ? 99 : Math.max(0, Number(item.inventory_quantity || 0)),
         };
       }),
     },
@@ -234,7 +239,7 @@ async function getShopData(): Promise<{
   const productQuery = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,+variants.metadata,*variants.options,*images,*collection,*categories",
+    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*variants,*variants.calculated_price,+variants.sku,+variants.metadata,+variants.inventory_quantity,+variants.allow_backorder,*variants.options,*images,*collection,*categories",
   });
 
   const [productsResponse, categoriesResponse] = await Promise.all([
@@ -342,7 +347,7 @@ function renderProductCards(products: ShopProduct[]) {
       const safeTitle = escapeHtml(product.title);
       const safeBrand = escapeHtml(product.brand);
       const safePrice = product.price ?? 0;
-      const canAddToCart = product.price !== null;
+      const canAddToCart = product.price !== null && product.inventoryQuantity > 0;
       const priceMarkup = product.price === null
         ? escapeHtml(product.priceLabel)
         : `${product.discountPercentage ? `<strong>${escapeHtml(product.priceLabel)}</strong> <del>${escapeHtml(pesoFormatter.format(product.originalPrice || product.price))}</del> <em>${product.discountPercentage}% OFF</em>` : escapeHtml(product.priceLabel)}`;
@@ -352,7 +357,7 @@ function renderProductCards(products: ShopProduct[]) {
         <span>${safeBrand}</span>
         <h2>${safeTitle}</h2>
         <p class="shop-card-price">${priceMarkup}</p>
-        <button type="button" data-price="${safePrice}" data-name="${safeTitle}" data-image="${escapeHtml(product.image)}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : "Set price first"}</button>
+        <button type="button" data-price="${safePrice}" data-stock="${product.inventoryQuantity}" data-name="${safeTitle}" data-image="${escapeHtml(product.image)}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : product.inventoryQuantity < 1 ? "Sold out" : "Set price first"}</button>
       </article>`;
     })
     .join("");
