@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 210" role="img" aria-labelledby="title">
+  <title id="title">Dummy QR code for checkout testing</title>
+  <rect width="210" height="210" rx="12" fill="#fff"/>
+  <g fill="#172f35">
+    <path d="M15 15h60v60H15zm10 10v40h40V25zm10 10h20v20H35zM135 15h60v60h-60zm10 10v40h40V25zm10 10h20v20h-20zM15 135h60v60H15zm10 10v40h40v-40zm10 10h20v20H35z" fill-rule="evenodd"/>
+    <path d="M90 15h15v15H90zM110 15h10v30h-10zM85 40h20v10H85zM90 60h30v15H90zM15 90h15v25H15zM35 85h20v15H35zM60 90h15v30H60zM85 85h15v15H85zM105 85h25v15h-25zM140 85h15v30h-15zM165 90h30v15h-30zM85 110h35v15H85zM125 105h10v30h-10zM155 115h15v15h-15zM180 115h15v25h-15zM85 140h15v30H85zM105 135h25v15h-25zM140 140h20v20h-20zM165 145h30v15h-30zM105 165h15v30h-15zM130 175h20v20h-20zM160 170h15v25h-15zM180 175h15v20h-15z"/>
+  </g>
+  <rect x="72" y="92" width="66" height="25" rx="7" fill="#fff"/>
+  <text x="105" y="109" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#d92d42">DUMMY</text>
+</svg>

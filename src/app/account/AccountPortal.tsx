@@ -91,6 +91,15 @@ function orderDate(value: string) {
   return new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", year: "numeric" }).format(new Date(value));
 }
 
+function dummyOrders(): Order[] {
+  try {
+    const stored = JSON.parse(localStorage.getItem("km-dummy-orders") || "[]");
+    return Array.isArray(stored) ? stored : [];
+  } catch {
+    return [];
+  }
+}
+
 function trackingFor(order: Order) {
   return order.fulfillments?.flatMap((fulfillment) => fulfillment.labels || []).find((label) => label.tracking_number);
 }
@@ -128,7 +137,7 @@ export function AccountPortal() {
       if (process.env.NODE_ENV === "development" && window.location.search.includes("preview=1")) {
         queueMicrotask(() => {
           setCustomer({ first_name: "Mika", last_name: "Santos", email: "mika@example.com", phone: "+63 917 480 1182" });
-          setOrders(previewOrders);
+          setOrders([...dummyOrders(), ...previewOrders]);
           setOffset(previewOrders.length);
           setMessage("");
         });
@@ -141,7 +150,7 @@ export function AccountPortal() {
     ]).then(([profile, orderData]) => {
       const firstPage = orderData.orders || [];
       setCustomer(profile.customer);
-      setOrders(firstPage);
+      setOrders([...dummyOrders(), ...firstPage]);
       setOffset(firstPage.length);
       setHasMore(firstPage.length === PAGE_SIZE && (orderData.count === undefined || firstPage.length < orderData.count));
       setMessage("");

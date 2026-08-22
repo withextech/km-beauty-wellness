@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title">
+  <title id="title">QR Ph</title>
+  <path fill="#194888" d="M15 86V44c0-18 12-30 30-30h45l19 18-17 13H52c-6 0-9 3-9 9v32z"/>
+  <circle cx="80" cy="80" r="29" fill="#fff100"/>
+  <path fill="#e30620" d="M145 74v42c0 18-12 30-30 30H70l-19-18 17-13h40c6 0 9-3 9-9V74z"/>
+</svg>
