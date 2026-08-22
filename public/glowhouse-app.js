@@ -259,6 +259,9 @@ document.addEventListener("click", (event) => {
   if (!headerSearch?.contains(event.target) && !searchTrigger?.contains(event.target)) closeHeaderSearch();
 });
 document.querySelector("[data-open-cart]")?.addEventListener("click", () => openPanel(cartDrawer));
+if (new URLSearchParams(window.location.search).get("cart") === "open") {
+  requestAnimationFrame(() => openPanel(cartDrawer));
+}
 document.querySelectorAll('a[href="/contact"]').forEach((link) => link.addEventListener("click", (event) => {
   event.preventDefault();
   openPanel(contactModal);
