@@ -1,3 +1,5 @@
+import type { ProductModalData } from "../shop/ProductDetailsModal";
+
 export type StoreProduct = {
   id: string;
   variantId: string;
@@ -9,6 +11,7 @@ export type StoreProduct = {
   originalPrice: number;
   priceLabel: string;
   inventoryQuantity: number;
+  modal: ProductModalData;
 };
 
 export type HomepageCms = {
@@ -22,10 +25,12 @@ export type HomepageCms = {
 const money = new Intl.NumberFormat("en-PH", { currency: "PHP", style: "currency" });
 
 type ApiProduct = {
-  id: string; title: string; handle: string; thumbnail?: string | null;
+  id: string; title: string; subtitle?: string | null; description?: string | null; handle: string; thumbnail?: string | null;
   images?: Array<{ url?: string | null }>;
   collection?: { title?: string | null } | null;
-  variants?: Array<{ id: string; inventory_quantity?: number; allow_backorder?: boolean; calculated_price?: { calculated_amount?: number; original_amount?: number } | null; metadata?: { promo_price?: number | string | null } | null }>;
+  categories?: Array<{ name?: string | null }>;
+  metadata?: { product_video_url?: string; ingredients?: string; usage_instructions?: string; skin_type?: string; selling_point?: string; net_content?: string; shelf_life?: string; period_after_opening?: string; cpr_number?: string; listing_type?: string } | null;
+  variants?: Array<{ id: string; title?: string | null; sku?: string | null; inventory_quantity?: number; allow_backorder?: boolean; calculated_price?: { calculated_amount?: number; original_amount?: number } | null; metadata?: { promo_price?: number | string | null } | null; options?: Array<{ value?: string | null }> }>;
 };
 
 function backend() {
@@ -59,7 +64,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
   const query = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,handle,thumbnail,*images,*collection,*variants,*variants.calculated_price,+variants.sku,+variants.metadata,+variants.inventory_quantity,+variants.allow_backorder",
+    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*images,*collection,*categories,*variants,*variants.calculated_price,+variants.sku,+variants.metadata,+variants.inventory_quantity,+variants.allow_backorder,*variants.options",
   });
   const response = await fetch(`${backend()}/store/products?${query}`, {
     headers: headers(),
@@ -75,17 +80,27 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
     const promoPrice = typeof rawPromoPrice === "number" ? rawPromoPrice : rawPromoPrice ? Number(rawPromoPrice) : 0;
     const price = promoPrice > 0 && originalPrice > promoPrice ? promoPrice : Number(calculated?.calculated_amount ?? originalPrice);
     if (!variant?.id || !price) return [];
+    const images = [product.thumbnail, ...(product.images || []).map((item) => item.url)].filter((url): url is string => Boolean(url)).filter((url, index, all) => all.indexOf(url) === index);
+    const image = String(images[0] || "/assets/hero-sunblush-clean.png");
+    const variantData = (product.variants || []).map((item) => {
+      const itemOriginal = Number(item.calculated_price?.original_amount ?? item.calculated_price?.calculated_amount ?? 0);
+      const rawItemPromo = item.metadata?.promo_price;
+      const itemPromo = typeof rawItemPromo === "number" ? rawItemPromo : rawItemPromo ? Number(rawItemPromo) : 0;
+      const itemPrice = itemPromo > 0 && itemOriginal > itemPromo ? itemPromo : Number(item.calculated_price?.calculated_amount ?? itemOriginal);
+      return { id: item.id, title: (item.options || []).map((option) => option.value?.trim()).filter(Boolean).join(" · ") || item.title?.trim() || item.sku || "Standard", sku: item.sku || "", price: itemPrice || null, originalPrice: itemOriginal || itemPrice || null, image, inventoryQuantity: item.allow_backorder ? 99 : Math.max(0, Number(item.inventory_quantity || 0)) };
+    });
     return [{
       id: String(product.id),
       variantId: String(variant.id),
       title: String(product.title),
       handle: String(product.handle),
       brand: String(product.collection?.title || "KM Beauty"),
-      image: String(product.thumbnail || product.images?.[0]?.url || "/assets/hero-sunblush-clean.png"),
+      image,
       price,
       originalPrice: originalPrice || price,
       priceLabel: money.format(price),
       inventoryQuantity: variant.allow_backorder ? 99 : Math.max(0, Number(variant.inventory_quantity || 0)),
+      modal: { id: String(product.id), title: String(product.title), subtitle: product.subtitle || "", description: product.description || "", brand: String(product.collection?.title || "KM Beauty"), category: product.categories?.[0]?.name || "Unassigned", image, images: images.length ? images : [image], videoUrl: product.metadata?.product_video_url || "", ingredients: product.metadata?.ingredients || "", usageInstructions: product.metadata?.usage_instructions || "", skinType: product.metadata?.skin_type || "", sellingPoint: product.metadata?.selling_point || "", netContent: product.metadata?.net_content || "", shelfLife: product.metadata?.shelf_life || "", periodAfterOpening: product.metadata?.period_after_opening || "", cprNumber: product.metadata?.cpr_number || "", listingType: product.metadata?.listing_type || "", variants: variantData },
     }];
   });
 }

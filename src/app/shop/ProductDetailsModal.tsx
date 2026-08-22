@@ -90,13 +90,13 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
     const click = (event: MouseEvent) => {
       const target = event.target as Element;
       if (target.closest("[data-price], a, button, input, select, textarea")) return;
-      const card = target.closest<HTMLElement>(".shop-card[data-product-id]");
+      const card = target.closest<HTMLElement>(".shop-card[data-product-id], .flash-product[data-product-id], .product-card[data-product-id]");
       if (card?.dataset.productId) openProduct(card.dataset.productId);
     };
     const keydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setProductId(null);
       if ((event.key === "Enter" || event.key === " ") && event.target instanceof HTMLElement) {
-        const card = event.target.closest<HTMLElement>(".shop-card[data-product-id]");
+        const card = event.target.closest<HTMLElement>(".shop-card[data-product-id], .flash-product[data-product-id], .product-card[data-product-id]");
         if (card?.dataset.productId) {
           event.preventDefault();
           openProduct(card.dataset.productId);

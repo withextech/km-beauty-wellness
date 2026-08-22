@@ -1,18 +1,19 @@
 import Script from "next/script";
 import { escapeHtml, getHomepageCms, getStoreProducts, productButton, type StoreProduct } from "./lib/store-data";
+import { ProductDetailsModal } from "./shop/ProductDetailsModal";
 
 function renderFlashProducts(products: StoreProduct[]) {
   if (!products.length) return `<p class="storefront-empty">No flash-sale products selected.</p>`;
   return products.map((product) => {
     const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0;
     const soldOut = product.inventoryQuantity < 1;
-    return `<article class="flash-product${soldOut ? " is-sold-out" : ""}">${soldOut ? `<b class="stock-badge">Out of stock</b>` : discount ? `<b>${discount}% off</b>` : ""}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"><div><span>${escapeHtml(product.brand)}</span><h3>${escapeHtml(product.title)}</h3><p>${product.originalPrice > product.price ? `<s>₱${product.originalPrice.toLocaleString("en-PH")}</s> ` : ""}${product.priceLabel}</p><button type="button" ${productButton(product)} ${soldOut ? "disabled" : ""}>${soldOut ? "Out of stock" : "Add to cart"}</button></div></article>`;
+    return `<article class="flash-product${soldOut ? " is-sold-out" : ""}" role="button" tabindex="0" aria-label="View details for ${escapeHtml(product.title)}" data-product-id="${escapeHtml(product.id)}">${soldOut ? `<b class="stock-badge">Out of stock</b>` : discount ? `<b>${discount}% off</b>` : ""}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"><div><span>${escapeHtml(product.brand)}</span><h3>${escapeHtml(product.title)}</h3><p>${product.originalPrice > product.price ? `<s>₱${product.originalPrice.toLocaleString("en-PH")}</s> ` : ""}${product.priceLabel}</p><button type="button" ${productButton(product)} ${soldOut ? "disabled" : ""}>${soldOut ? "Out of stock" : "Add to cart"}</button></div></article>`;
   }).join("");
 }
 
 function renderDiscoverProducts(products: StoreProduct[]) {
   if (!products.length) return `<p class="storefront-empty">No Discover products selected.</p>`;
-  return products.map((product) => { const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; const soldOut = product.inventoryQuantity < 1; return `<article class="product-card${soldOut ? " is-sold-out" : ""}"><div class="product-art">${soldOut ? `<b class="stock-badge">Out of stock</b>` : ""}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><h3>${escapeHtml(product.title)}</h3><p>${discount ? `<strong>${product.priceLabel}</strong> <s>₱${product.originalPrice.toLocaleString("en-PH")}</s> <em class="product-discount">${discount}% OFF</em>` : product.priceLabel}</p><button type="button" ${productButton(product)} ${soldOut ? "disabled" : ""}>${soldOut ? "Out of stock" : "Add to cart"}</button></article>`; }).join("");
+  return products.map((product) => { const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; const soldOut = product.inventoryQuantity < 1; return `<article class="product-card${soldOut ? " is-sold-out" : ""}" role="button" tabindex="0" aria-label="View details for ${escapeHtml(product.title)}" data-product-id="${escapeHtml(product.id)}"><div class="product-art">${soldOut ? `<b class="stock-badge">Out of stock</b>` : ""}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><h3>${escapeHtml(product.title)}</h3><p>${discount ? `<strong>${product.priceLabel}</strong> <s>₱${product.originalPrice.toLocaleString("en-PH")}</s> <em class="product-discount">${discount}% OFF</em>` : product.priceLabel}</p><button type="button" ${productButton(product)} ${soldOut ? "disabled" : ""}>${soldOut ? "Out of stock" : "Add to cart"}</button></article>`; }).join("");
 }
 
 function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null, heroImages: string[], discoverImage: string | null) {
@@ -203,6 +204,7 @@ export default async function Home() {
   return (
     <>
       <div dangerouslySetInnerHTML={{ __html: glowhouseMarkup(flashProducts, discoverProducts, cms.flash_sale_ends_at, cms.hero_images, cms.discover_image) }} />
+      <ProductDetailsModal products={[...flashProducts, ...discoverProducts].filter((product, index, all) => all.findIndex((item) => item.id === product.id) === index).map((product) => product.modal)} />
       <Script src="/glowhouse-app.js" strategy="afterInteractive" />
     </>
   );
