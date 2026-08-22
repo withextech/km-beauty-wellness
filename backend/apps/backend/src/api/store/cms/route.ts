@@ -1,10 +1,10 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { Modules } from "@medusajs/framework/utils"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
-  const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
-  const { data } = await query.graph({ entity: "store", fields: ["metadata"] })
-  const metadata = (data[0]?.metadata || {}) as Record<string, unknown>
+  const storeService = req.scope.resolve(Modules.STORE)
+  const stores = await storeService.listStores({}, { take: 1 })
+  const metadata = (stores[0]?.metadata || {}) as Record<string, unknown>
   const saved = (metadata.homepage_cms || {}) as Record<string, unknown>
   res.json({ cms: {
     hero_images: Array.isArray(saved.hero_images) ? saved.hero_images : [],
