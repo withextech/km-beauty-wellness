@@ -20,6 +20,10 @@ export type HomepageCms = {
   flash_sale_product_ids: string[];
   flash_sale_ends_at: string | null;
   discover_product_ids: string[];
+  contact_address: string;
+  contact_email: string;
+  contact_phone: string;
+  delivery_fees: Record<string, number>;
 };
 
 const money = new Intl.NumberFormat("en-PH", { currency: "PHP", style: "currency" });
@@ -106,7 +110,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
 }
 
 export async function getHomepageCms(): Promise<HomepageCms> {
-  const fallback = { hero_images: [], discover_image: null, flash_sale_product_ids: [], flash_sale_ends_at: null, discover_product_ids: [] };
+  const fallback = { hero_images: [], discover_image: null, flash_sale_product_ids: [], flash_sale_ends_at: null, discover_product_ids: [], contact_address: "Cavite, Philippines", contact_email: "hello@kmbeautywellness.com", contact_phone: "+63 900 000 0000", delivery_fees: { ncr: 95, luzon: 85, visayas: 100, mindanao: 105, island: 115 } };
   if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return fallback;
   const response = await fetch(`${backend()}/store/cms`, { headers: headers(), cache: "no-store" });
   if (!response.ok) return fallback;

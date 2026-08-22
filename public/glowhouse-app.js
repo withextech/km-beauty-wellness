@@ -31,12 +31,25 @@ document.body.insertAdjacentHTML("beforeend", `<section class="contact-details-m
   <h2>Contact KM Beauty</h2>
   <p class="contact-details-intro">For product and order concerns, reach us directly through the details below.</p>
   <div class="contact-details-list">
-    <article><i aria-hidden="true">⌖</i><div><small>Office address</small><strong>Cavite, Philippines</strong></div></article>
-    <a href="mailto:hello@kmbeautywellness.com"><i aria-hidden="true">✉</i><div><small>Email address</small><strong>hello@kmbeautywellness.com</strong></div></a>
-    <a href="tel:+639000000000"><i aria-hidden="true">☎</i><div><small>Contact number</small><strong>+63 900 000 0000</strong></div></a>
+    <article><i aria-hidden="true">⌖</i><div><small>Office address</small><strong data-contact-address>Cavite, Philippines</strong></div></article>
+    <a href="mailto:hello@kmbeautywellness.com" data-contact-email-link><i aria-hidden="true">✉</i><div><small>Email address</small><strong data-contact-email>hello@kmbeautywellness.com</strong></div></a>
+    <a href="tel:+639000000000" data-contact-phone-link><i aria-hidden="true">☎</i><div><small>Contact number</small><strong data-contact-phone>+63 900 000 0000</strong></div></a>
   </div>
 </section>`);
 const contactModal = document.querySelector("[data-contact-modal]");
+fetch("/api/store-settings").then((response) => response.ok ? response.json() : null).then((settings) => {
+  if (!settings) return;
+  const address = document.querySelector("[data-contact-address]");
+  const email = document.querySelector("[data-contact-email]");
+  const phone = document.querySelector("[data-contact-phone]");
+  if (address) address.textContent = settings.contact_address || address.textContent;
+  if (email) email.textContent = settings.contact_email || email.textContent;
+  if (phone) phone.textContent = settings.contact_phone || phone.textContent;
+  const emailLink = document.querySelector("[data-contact-email-link]");
+  const phoneLink = document.querySelector("[data-contact-phone-link]");
+  if (emailLink && settings.contact_email) emailLink.href = `mailto:${settings.contact_email}`;
+  if (phoneLink && settings.contact_phone) phoneLink.href = `tel:${String(settings.contact_phone).replace(/[^+\d]/g, "")}`;
+}).catch(() => {});
 
 const searchTrigger = document.querySelector("[data-open-search]");
 const headerActions = searchTrigger?.closest(".actions");
