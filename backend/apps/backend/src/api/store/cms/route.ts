@@ -3,8 +3,9 @@ import { Modules } from "@medusajs/framework/utils"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const storeService = req.scope.resolve(Modules.STORE)
-  const stores = await storeService.listStores({}, { take: 1, select: ["id", "metadata"] })
-  const metadata = (stores[0]?.metadata || {}) as Record<string, unknown>
+  const stores = await storeService.listStores({}, { take: 1 })
+  const store = stores[0] ? await storeService.retrieveStore(stores[0].id, { select: ["id", "metadata"] }) : null
+  const metadata = (store?.metadata || {}) as Record<string, unknown>
   const saved = (metadata.homepage_cms || {}) as Record<string, unknown>
   res.json({ cms: {
     hero_images: Array.isArray(saved.hero_images) ? saved.hero_images : [],
