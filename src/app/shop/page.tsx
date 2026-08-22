@@ -18,10 +18,14 @@ type MedusaPrice = {
 
 type MedusaVariant = {
   id: string;
-  title: string;
+  title?: string | null;
   sku?: string | null;
   calculated_price?: MedusaPrice | null;
   metadata?: { promo_price?: number | string | null } | null;
+  options?: Array<{
+    value?: string | null;
+    option?: { title?: string | null } | null;
+  }>;
 };
 
 type MedusaProduct = {
@@ -195,9 +199,12 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
       listingType: product.metadata?.listing_type || "",
       variants: (product.variants || []).map((item) => {
         const itemPricing = getVariantPrices(item);
+        const optionValues = (item.options || [])
+          .map((option) => option.value?.trim())
+          .filter((value): value is string => Boolean(value));
         return {
           id: item.id,
-          title: item.title,
+          title: optionValues.join(" · ") || item.title?.trim() || item.sku || "Standard",
           sku: item.sku || "",
           price: itemPricing.price,
           originalPrice: itemPricing.originalPrice,
@@ -226,7 +233,7 @@ async function getShopData(): Promise<{
   const productQuery = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,+variants.metadata,*images,*collection,*categories",
+    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,+variants.metadata,*variants.options,*images,*collection,*categories",
   });
 
   const [productsResponse, categoriesResponse] = await Promise.all([
