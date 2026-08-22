@@ -50,9 +50,9 @@ function StoreHeader() {
           <h3>Order Summary</h3>
           <div><small>Items</small><strong data-cart-items-total>0</strong></div>
           <div><small>Subtotal</small><strong data-cart-subtotal>₱0.00</strong></div>
-          <div><small>Shipping</small><strong>Calculated at checkout</strong></div>
+          <div><small>Flat shipping</small><strong data-cart-shipping>₱0.00</strong></div>
         </div>
-        <div className="cart-summary"><small>Total</small><strong data-cart-total>₱0.00</strong></div>
+        <div className="cart-summary"><small>Grand total</small><strong data-cart-total>₱0.00</strong></div>
         <Link className="checkout-button" href="/checkout">Checkout</Link>
       </aside>
     </>

@@ -1,6 +1,7 @@
 const totalEls = document.querySelectorAll("[data-cart-total]");
 const subtotalEls = document.querySelectorAll("[data-cart-subtotal]");
 const itemsTotalEls = document.querySelectorAll("[data-cart-items-total]");
+const shippingEls = document.querySelectorAll("[data-cart-shipping]");
 const countEls = document.querySelectorAll("[data-cart-count]");
 const floatingCart = document.querySelector(".floating-cart");
 const cartLines = document.querySelector("[data-cart-lines]");
@@ -80,9 +81,10 @@ const renderSearchSuggestions = () => {
     return;
   }
   const matches = productSearchCatalog.filter((product) => product.name.toLowerCase().includes(query)).slice(0, 5);
-  suggestions.innerHTML = matches.length
+  const resultRows = matches.length
     ? matches.map((product) => `<a href="/shop?product=${encodeURIComponent(product.id)}"><img src="${escapeSearchHtml(product.image)}" alt=""><span><strong>${escapeSearchHtml(product.name)}</strong><small>${formatPrice(product.price)}</small></span><b>View</b></a>`).join("")
-    : `<p>No products found for “${escapeSearchHtml(input.value.trim())}”.</p>`;
+    : `<p>No quick matches found for “${escapeSearchHtml(input.value.trim())}”.</p>`;
+  suggestions.innerHTML = `${resultRows}<a class="header-search-all" href="/shop?q=${encodeURIComponent(input.value.trim())}"><span><strong>View all results for “${escapeSearchHtml(input.value.trim())}”</strong><small>Search the full shop catalog</small></span><b>See all →</b></a>`;
   suggestions.classList.add("open");
 };
 
@@ -95,12 +97,16 @@ const renderCart = () => {
   localStorage.setItem("km-cart", JSON.stringify(cartItems));
   const cartValue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const total = formatPrice(cartValue);
+  const shippingFee = cartItems.length ? 100 : 0;
+  const total = formatPrice(cartValue + shippingFee);
   totalEls.forEach((item) => {
     item.textContent = total;
   });
   subtotalEls.forEach((item) => {
-    item.textContent = total;
+    item.textContent = formatPrice(cartValue);
+  });
+  shippingEls.forEach((item) => {
+    item.textContent = formatPrice(shippingFee);
   });
   itemsTotalEls.forEach((item) => {
     item.textContent = cartCount.toString();
@@ -285,6 +291,7 @@ if (shopCards.length && brandLinks.length) {
   const shopGrid = document.querySelector(".shop-grid");
   const shopState = {
     brand: new URLSearchParams(window.location.search).get("brand") || "all",
+    query: (new URLSearchParams(window.location.search).get("q") || "").trim().toLowerCase(),
     category: "all",
     statuses: new Set(),
     sort: "default"
@@ -331,7 +338,8 @@ if (shopCards.length && brandLinks.length) {
       const matchesBrand = shopState.brand === "all" || card.dataset.brand === shopState.brand;
       const matchesCategory = shopState.category === "all" || card.dataset.category === shopState.category;
       const matchesStatus = shopState.statuses.size === 0 || [...shopState.statuses].every((status) => cardStatuses.includes(status));
-      const isVisible = matchesBrand && matchesCategory && matchesStatus;
+      const matchesSearch = !shopState.query || (card.dataset.searchText || "").includes(shopState.query);
+      const isVisible = matchesBrand && matchesCategory && matchesStatus && matchesSearch;
       card.classList.toggle("is-hidden", !isVisible);
       if (isVisible) visibleCount += 1;
     });
@@ -349,7 +357,9 @@ if (shopCards.length && brandLinks.length) {
       const labelParts = [];
       if (shopState.brand !== "all") labelParts.push(activeBrandLabel);
       if (shopState.category !== "all") labelParts.push(activeCategoryLabel);
-      shopCount.textContent = labelParts.length === 0
+      shopCount.textContent = shopState.query
+        ? `Search results for “${shopState.query}” — ${visibleCount} ${visibleCount === 1 ? "product" : "products"}`
+        : labelParts.length === 0
         ? `Showing all ${visibleCount} products`
         : `Showing ${visibleCount} ${labelParts.join(" / ")} products`;
     }
@@ -361,7 +371,10 @@ if (shopCards.length && brandLinks.length) {
     link.addEventListener("click", (event) => {
       event.preventDefault();
       const brand = link.dataset.brandFilter || "all";
-      const url = brand === "all" ? "/shop" : `/shop?brand=${brand}`;
+      const params = new URLSearchParams();
+      if (brand !== "all") params.set("brand", brand);
+      if (shopState.query) params.set("q", shopState.query);
+      const url = params.size ? `/shop?${params.toString()}` : "/shop";
       history.pushState({ brand }, "", url);
       shopState.brand = brand;
       applyShopFilters();
@@ -402,6 +415,7 @@ if (shopCards.length && brandLinks.length) {
   addEventListener("popstate", () => {
     const nextParams = new URLSearchParams(window.location.search);
     shopState.brand = nextParams.get("brand") || "all";
+    shopState.query = (nextParams.get("q") || "").trim().toLowerCase();
     applyShopFilters();
   });
 }

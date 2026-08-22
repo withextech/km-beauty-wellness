@@ -347,7 +347,7 @@ function renderProductCards(products: ShopProduct[]) {
         ? escapeHtml(product.priceLabel)
         : `${product.discountPercentage ? `<strong>${escapeHtml(product.priceLabel)}</strong> <del>${escapeHtml(pesoFormatter.format(product.originalPrice || product.price))}</del> <em>${product.discountPercentage}% OFF</em>` : escapeHtml(product.priceLabel)}`;
 
-      return `<article class="shop-card ${product.status.includes("best-seller") ? "sale" : ""}" role="button" tabindex="0" aria-label="View details for ${safeTitle}" data-brand="${escapeHtml(product.brandSlug)}" data-category="${escapeHtml(product.categorySlug)}" data-status="${escapeHtml(product.status)}" data-price-value="${safePrice}" data-popularity="${96 - product.order}" data-order="${product.order}" data-product-id="${escapeHtml(product.id)}" data-sku="${escapeHtml(product.sku)}">
+      return `<article class="shop-card ${product.status.includes("best-seller") ? "sale" : ""}" role="button" tabindex="0" aria-label="View details for ${safeTitle}" data-search-text="${escapeHtml(`${product.title} ${product.brand} ${product.category}`.toLowerCase())}" data-brand="${escapeHtml(product.brandSlug)}" data-category="${escapeHtml(product.categorySlug)}" data-status="${escapeHtml(product.status)}" data-price-value="${safePrice}" data-popularity="${96 - product.order}" data-order="${product.order}" data-product-id="${escapeHtml(product.id)}" data-sku="${escapeHtml(product.sku)}">
         <div class="product-art"><img src="${escapeHtml(product.image)}" alt="${safeTitle}"></div>
         <span>${safeBrand}</span>
         <h2>${safeTitle}</h2>
@@ -475,9 +475,9 @@ function buildShopMarkup(products: ShopProduct[], categories: ShopCategory[]) {
       <h3>Order Summary</h3>
       <div><small>Items</small><strong data-cart-items-total>0</strong></div>
       <div><small>Subtotal</small><strong data-cart-subtotal>₱0.00</strong></div>
-      <div><small>Shipping</small><strong>Calculated at checkout</strong></div>
+      <div><small>Flat shipping</small><strong data-cart-shipping>₱0.00</strong></div>
     </div>
-    <div class="cart-summary"><small>Total</small><strong data-cart-total>₱0.00</strong></div>
+    <div class="cart-summary"><small>Grand total</small><strong data-cart-total>₱0.00</strong></div>
     <a class="checkout-button" href="/checkout">Checkout</a>
   </aside>`;
 }

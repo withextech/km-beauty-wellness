@@ -52,7 +52,7 @@ export function CheckoutForm() {
   }
 
   return <section className="checkout-card checkout-premium">
-    <header className="checkout-heading"><Link href="/shop">← Continue shopping</Link><span>Secure checkout</span><h1>Complete your order</h1><p>Enter your delivery details, review your items, then continue to QR Ph payment.</p></header>
+    <header className="checkout-heading"><Link className="continue-shopping-button" href="/shop">← Continue shopping</Link><span>Secure checkout</span><h1>Complete your order</h1><p>Enter your delivery details, review your items, then continue to QR Ph payment.</p></header>
     <div className="checkout-layout">
       <form onSubmit={placeOrder}>
         <div className="checkout-section-title"><b>1</b><div><h2>Delivery information</h2><p>Where should we send your KM Beauty order?</p></div></div>
