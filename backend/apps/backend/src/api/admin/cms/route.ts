@@ -1,5 +1,6 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3"
 
 type CmsSettings = {
   hero_images: string[]
@@ -46,5 +47,14 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   }
   const storeService = req.scope.resolve(Modules.STORE)
   await storeService.updateStores(store.id, { metadata: { ...(store.metadata || {}), homepage_cms: settings } })
+  if (process.env.S3_ENDPOINT && process.env.S3_BUCKET && process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY) {
+    const client = new S3Client({
+      region: process.env.S3_REGION || "auto",
+      endpoint: process.env.S3_ENDPOINT,
+      credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY },
+      forcePathStyle: true,
+    })
+    await client.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: "cms/homepage/settings.json", Body: JSON.stringify(settings), ContentType: "application/json", CacheControl: "no-cache" }))
+  }
   res.json({ cms: settings })
 }
