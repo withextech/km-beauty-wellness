@@ -19,7 +19,6 @@ function StoreHeader() {
         <nav aria-label="Main navigation">
           <Link href="/">Home</Link>
           <Link href="/shop">Shop</Link>
-          <Link href="/contact">Contact Us</Link>
         </nav>
         <div className="actions">
           <button className="icon-action" type="button" aria-label="Search products" data-open-search>

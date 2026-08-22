@@ -23,7 +23,6 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
     <nav aria-label="Main navigation">
       <a href="#home">Home</a>
       <a href="/shop">Shop</a>
-      <a href="/contact">Contact Us</a>
     </nav>
     <div class="actions">
       <button class="icon-action" type="button" aria-label="Search products" data-open-search>

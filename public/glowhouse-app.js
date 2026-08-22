@@ -12,6 +12,19 @@ const shopSidebar = document.querySelector(".shop-sidebar");
 const shopToolbar = document.querySelector(".shop-toolbar");
 const cartItems = JSON.parse(localStorage.getItem("km-cart") || "[]");
 
+document.body.insertAdjacentHTML("beforeend", `<section class="contact-details-modal" aria-label="Contact KM Beauty and Wellness" aria-modal="true" role="dialog" data-contact-modal>
+  <button class="contact-details-close" type="button" aria-label="Close contact details" data-close-panels>×</button>
+  <span>Get in touch</span>
+  <h2>Contact KM Beauty</h2>
+  <p class="contact-details-intro">For product and order concerns, reach us directly through the details below.</p>
+  <div class="contact-details-list">
+    <article><i aria-hidden="true">⌖</i><div><small>Office address</small><strong>Cavite, Philippines</strong></div></article>
+    <a href="mailto:hello@kmbeautywellness.com"><i aria-hidden="true">✉</i><div><small>Email address</small><strong>hello@kmbeautywellness.com</strong></div></a>
+    <a href="tel:+639000000000"><i aria-hidden="true">☎</i><div><small>Contact number</small><strong>+63 900 000 0000</strong></div></a>
+  </div>
+</section>`);
+const contactModal = document.querySelector("[data-contact-modal]");
+
 const formatPrice = (value) => `₱${value.toLocaleString("en-PH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
@@ -100,6 +113,7 @@ const closePanels = () => {
   searchPanel?.classList.remove("open");
   accountModal?.classList.remove("open");
   cartDrawer?.classList.remove("open");
+  contactModal?.classList.remove("open");
   shopSidebar?.classList.remove("open");
   shopToolbar?.classList.remove("sort-open");
 };
@@ -155,6 +169,10 @@ floatingCart?.addEventListener("click", () => {
 
 document.querySelector("[data-open-search]")?.addEventListener("click", () => openPanel(searchPanel));
 document.querySelector("[data-open-cart]")?.addEventListener("click", () => openPanel(cartDrawer));
+document.querySelectorAll('a[href="/contact"]').forEach((link) => link.addEventListener("click", (event) => {
+  event.preventDefault();
+  openPanel(contactModal);
+}));
 document.querySelector("[data-toggle-shop-filters]")?.addEventListener("click", () => {
   closePanels();
   overlay?.classList.add("show");

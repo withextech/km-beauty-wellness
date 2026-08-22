@@ -370,7 +370,6 @@ function buildShopMarkup(products: ShopProduct[], categories: ShopCategory[]) {
     <nav aria-label="Main navigation">
       <a href="/">Home</a>
       <a href="/shop">Shop</a>
-      <a href="/contact">Contact Us</a>
     </nav>
     <div class="actions">
       <button class="icon-action" type="button" aria-label="Search products" data-open-search>
