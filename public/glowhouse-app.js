@@ -6,6 +6,7 @@ const floatingCart = document.querySelector(".floating-cart");
 const cartLines = document.querySelector("[data-cart-lines]");
 const overlay = document.querySelector("[data-overlay]");
 const searchPanel = document.querySelector("[data-search-panel]");
+const accountModal = document.querySelector("[data-account-modal]");
 const cartDrawer = document.querySelector("[data-cart-drawer]");
 const shopSidebar = document.querySelector(".shop-sidebar");
 const shopToolbar = document.querySelector(".shop-toolbar");
@@ -32,6 +33,17 @@ const renderCart = () => {
   });
   countEls.forEach((item) => {
     item.textContent = cartCount;
+  });
+  document.querySelectorAll("[data-price]").forEach((button) => {
+    const variantId = button.dataset.variantId || "";
+    const productId = button.dataset.productId || "";
+    const line = cartItems.find((item) => variantId ? item.variantId === variantId : item.productId === productId);
+    const quantity = line?.quantity || 0;
+    button.classList.toggle("has-cart-quantity", quantity > 0);
+    button.setAttribute("aria-label", quantity ? `${quantity} in cart. Decrease on the left or increase on the right.` : "Add to cart");
+    button.innerHTML = quantity
+      ? `<span data-cart-action="decrease" aria-hidden="true">−</span><b>${quantity} in cart</b><span data-cart-action="increase" aria-hidden="true">+</span>`
+      : "Add to cart";
   });
   if (cartLines) {
     cartLines.innerHTML = cartItems.length
@@ -104,7 +116,15 @@ document.addEventListener("click", (event) => {
 
   const price = Number(button.dataset.price);
   const name = button.dataset.name || button.closest("article")?.querySelector("h3")?.textContent || "KM Beauty item";
-  const existing = cartItems.find((item) => item.name === name);
+  const variantId = button.dataset.variantId || "";
+  const productId = button.dataset.productId || "";
+  const existingIndex = cartItems.findIndex((item) => variantId ? item.variantId === variantId : item.productId === productId);
+  const existing = cartItems[existingIndex];
+  const action = event.target.closest("[data-cart-action]")?.dataset.cartAction;
+  if (action === "decrease") {
+    if (existing) updateCartItem(existingIndex, existing.quantity - 1);
+    return;
+  }
   if (existing) {
     existing.quantity += 1;
   } else {
@@ -112,20 +132,20 @@ document.addEventListener("click", (event) => {
       name,
       price,
       quantity: 1,
-      productId: button.dataset.productId || "",
-      variantId: button.dataset.variantId || ""
+      productId,
+      variantId
     });
   }
   renderCart();
   floatingCart?.classList.remove("cart-pop");
   void floatingCart?.offsetWidth;
   floatingCart?.classList.add("cart-pop");
-  const previousLabel = button.textContent;
-  button.textContent = "Added";
-  setTimeout(() => {
-    button.textContent = previousLabel || "Add to cart";
-  }, 1400);
 });
+
+document.addEventListener("change", (event) => {
+  if (event.target.closest(".product-modal-variant")) requestAnimationFrame(renderCart);
+});
+document.addEventListener("km-cart-refresh", renderCart);
 
 floatingCart?.addEventListener("click", () => {
   openPanel(cartDrawer);
@@ -328,3 +348,5 @@ if (header) {
 document.querySelector(".menu")?.addEventListener("click", () => {
   document.querySelector(".header")?.classList.toggle("nav-open");
 });
+
+renderCart();

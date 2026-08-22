@@ -208,6 +208,7 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
           sku: item.sku || "",
           price: itemPricing.price,
           originalPrice: itemPricing.originalPrice,
+          image: images[0] || fallbackImage,
         };
       }),
     },

@@ -8,6 +8,7 @@ export type ProductModalVariant = {
   sku: string;
   price: number | null;
   originalPrice: number | null;
+  image: string;
 };
 
 export type ProductModalData = {
@@ -119,6 +120,11 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
     };
   }, [product]);
 
+  useEffect(() => {
+    if (!productId) return;
+    requestAnimationFrame(() => document.dispatchEvent(new CustomEvent("km-cart-refresh")));
+  }, [productId, variantId]);
+
   if (!product) return null;
 
   const average = reviews.length
@@ -166,18 +172,24 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
             {product.sellingPoint ? <p className="product-modal-selling-point">{product.sellingPoint}</p> : null}
             {product.description ? <p className="product-modal-description">{product.description}</p> : null}
             {product.variants.length > 1 ? (
-              <label className="product-modal-variant">Choose an option
-                <select value={variant?.id || ""} onChange={(event) => setVariantId(event.target.value)}>
-                  {product.variants.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}
-                </select>
-              </label>
+              <fieldset className="product-modal-variant">
+                <legend>Choose an option</legend>
+                <div className="product-variant-tiles">
+                  {product.variants.map((item) => (
+                    <button className={item.id === variant?.id ? "active" : ""} key={item.id} onClick={() => setVariantId(item.id)} type="button">
+                      <img src={item.image || product.image} alt="" />
+                      <span>{item.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
             ) : null}
             <div className="product-modal-price">
               <strong>{variant?.price === null || variant?.price === undefined ? "Price unavailable" : money.format(variant.price)}</strong>
               {variant?.originalPrice && variant.price !== null && variant.originalPrice > variant.price ? <del>{money.format(variant.originalPrice)}</del> : null}
               {variant?.sku ? <small>SKU {variant.sku}</small> : null}
             </div>
-            <button className="product-modal-cart" type="button" data-price={variant?.price ?? 0} data-name={product.title} data-product-id={product.id} data-variant-id={variant?.id || ""} disabled={variant?.price === null || !variant?.id}>Add to cart</button>
+            <button className="product-modal-cart" type="button" data-price={variant?.price ?? 0} data-name={`${product.title}${variant?.title ? ` · ${variant.title}` : ""}`} data-product-id={product.id} data-variant-id={variant?.id || ""} disabled={variant?.price === null || !variant?.id}>Add to cart</button>
             {details.length ? <dl className="product-modal-facts">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl> : null}
           </div>
         </div>
