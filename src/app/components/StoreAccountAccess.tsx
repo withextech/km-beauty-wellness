@@ -16,6 +16,16 @@ export function StoreAccountAccess() {
   const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const showLogin = (trigger: HTMLElement) => {
+      const bounds = trigger.getBoundingClientRect();
+      setPosition({
+        right: Math.max(12, window.innerWidth - bounds.right),
+        top: bounds.bottom + 10,
+      });
+      setRegisterOpen(false);
+      setLoginOpen(true);
+    };
+
     const openLogin = (event: MouseEvent) => {
       const trigger = (event.target as Element).closest<HTMLElement>("[data-open-account]");
       if (!trigger) return;
@@ -26,13 +36,16 @@ export function StoreAccountAccess() {
         return;
       }
 
-      const bounds = trigger.getBoundingClientRect();
-      setPosition({
-        right: Math.max(12, window.innerWidth - bounds.right),
-        top: bounds.bottom + 10,
-      });
-      setRegisterOpen(false);
-      setLoginOpen((current) => !current);
+      if (loginOpen) {
+        setLoginOpen(false);
+      } else {
+        showLogin(trigger);
+      }
+    };
+
+    const openFromAccountPage = (event: Event) => {
+      const trigger = (event as CustomEvent<{ trigger: HTMLElement }>).detail?.trigger;
+      if (trigger) showLogin(trigger);
     };
 
     const closeOutside = (event: MouseEvent) => {
@@ -47,9 +60,11 @@ export function StoreAccountAccess() {
 
     document.addEventListener("click", openLogin);
     document.addEventListener("click", closeOutside);
+    document.addEventListener("km-open-customer-login", openFromAccountPage);
     return () => {
       document.removeEventListener("click", openLogin);
       document.removeEventListener("click", closeOutside);
+      document.removeEventListener("km-open-customer-login", openFromAccountPage);
     };
   }, [loginOpen]);
 

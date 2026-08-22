@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import { getPricingRegionId } from "../lib/store-data";
+import { MEDUSA_PUBLISHABLE_KEY, MEDUSA_URL } from "../lib/medusa-config";
+import { ProductDetailsModal, type ProductModalData } from "./ProductDetailsModal";
 
 export const metadata: Metadata = {
   title: "Shop | KM Beauty & Wellness",
@@ -19,6 +21,7 @@ type MedusaVariant = {
   title: string;
   sku?: string | null;
   calculated_price?: MedusaPrice | null;
+  metadata?: { promo_price?: number | string | null } | null;
 };
 
 type MedusaProduct = {
@@ -30,6 +33,16 @@ type MedusaProduct = {
   thumbnail?: string | null;
   metadata?: {
     shop_status?: string[] | string;
+    cpr_number?: string;
+    ingredients?: string;
+    listing_type?: string;
+    net_content?: string;
+    period_after_opening?: string;
+    product_video_url?: string;
+    selling_point?: string;
+    shelf_life?: string;
+    skin_type?: string;
+    usage_instructions?: string;
   } | null;
   collection?: {
     title?: string | null;
@@ -57,9 +70,12 @@ type ShopProduct = {
   status: string;
   image: string;
   price: number | null;
+  originalPrice: number | null;
+  discountPercentage: number;
   priceLabel: string;
   sku: string;
   order: number;
+  modal: ProductModalData;
 };
 
 type ShopCategory = {
@@ -98,15 +114,23 @@ function slugify(value: string) {
     .replace(/^-|-$/g, "");
 }
 
-function getProductPrice(product: MedusaProduct) {
-  const variant = product.variants?.[0];
+function getVariantPrices(variant: MedusaVariant | undefined) {
   const price = variant?.calculated_price;
+  const originalPrice = price?.original_amount ?? price?.calculated_amount ?? null;
+  const rawPromoPrice = variant?.metadata?.promo_price;
+  const promoPrice = typeof rawPromoPrice === "number" ? rawPromoPrice : rawPromoPrice ? Number(rawPromoPrice) : null;
+  const validPromoPrice = promoPrice !== null && Number.isFinite(promoPrice) && promoPrice > 0 && originalPrice !== null && promoPrice < originalPrice
+    ? promoPrice
+    : null;
+  const effectivePrice = validPromoPrice ?? price?.calculated_amount ?? originalPrice;
 
-  if (!price || price.currency_code !== "php") {
-    return null;
-  }
-
-  return price.calculated_amount ?? price.original_amount ?? null;
+  return {
+    price: effectivePrice,
+    originalPrice,
+    discountPercentage: effectivePrice !== null && originalPrice !== null && originalPrice > effectivePrice
+      ? Math.round((1 - effectivePrice / originalPrice) * 100)
+      : 0,
+  };
 }
 
 function normalizeShopStatuses(product: MedusaProduct) {
@@ -127,8 +151,12 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
   const brand = product.collection?.title || "KM Beauty";
   const brandSlug = product.collection?.handle || slugify(brand);
   const category = product.categories?.[0];
-  const price = getProductPrice(product);
   const variant = product.variants?.[0];
+  const pricing = getVariantPrices(variant);
+  const images = [product.thumbnail, ...(product.images || []).map((item) => item.url)]
+    .filter((url): url is string => Boolean(url))
+    .filter((url, imageIndex, all) => all.indexOf(url) === imageIndex);
+  const fallbackImage = fallbackImages[product.handle] || "/assets/hero-sunblush-clean.png";
 
   return {
     id: product.id,
@@ -139,15 +167,43 @@ function mapProduct(product: MedusaProduct, index: number): ShopProduct {
     category: category?.name || "Unassigned",
     categorySlug: category?.handle ? slugify(category.handle) : "unassigned",
     status: normalizeShopStatuses(product),
-    image:
-      product.thumbnail ||
-      product.images?.[0]?.url ||
-      fallbackImages[product.handle] ||
-      "/assets/hero-sunblush-clean.png",
-    price,
-    priceLabel: price === null ? "Set price in Admin" : pesoFormatter.format(price),
+    image: images[0] || fallbackImage,
+    price: pricing.price,
+    originalPrice: pricing.originalPrice,
+    discountPercentage: pricing.discountPercentage,
+    priceLabel: pricing.price === null ? "Set price in Admin" : pesoFormatter.format(pricing.price),
     sku: variant?.sku || product.handle,
     order: index + 1,
+    modal: {
+      id: product.id,
+      title: product.title,
+      subtitle: product.subtitle || "",
+      description: product.description || "",
+      brand,
+      category: category?.name || "Unassigned",
+      image: images[0] || fallbackImage,
+      images: images.length ? images : [fallbackImage],
+      videoUrl: product.metadata?.product_video_url || "",
+      ingredients: product.metadata?.ingredients || "",
+      usageInstructions: product.metadata?.usage_instructions || "",
+      skinType: product.metadata?.skin_type || "",
+      sellingPoint: product.metadata?.selling_point || "",
+      netContent: product.metadata?.net_content || "",
+      shelfLife: product.metadata?.shelf_life || "",
+      periodAfterOpening: product.metadata?.period_after_opening || "",
+      cprNumber: product.metadata?.cpr_number || "",
+      listingType: product.metadata?.listing_type || "",
+      variants: (product.variants || []).map((item) => {
+        const itemPricing = getVariantPrices(item);
+        return {
+          id: item.id,
+          title: item.title,
+          sku: item.sku || "",
+          price: itemPricing.price,
+          originalPrice: itemPricing.originalPrice,
+        };
+      }),
+    },
   };
 }
 
@@ -155,9 +211,8 @@ async function getShopData(): Promise<{
   categories: ShopCategory[];
   products: ShopProduct[];
 }> {
-  const backendUrl =
-    process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000";
-  const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY;
+  const backendUrl = MEDUSA_URL;
+  const publishableKey = MEDUSA_PUBLISHABLE_KEY;
 
   if (!publishableKey) {
     return { categories: [], products: [] };
@@ -171,7 +226,7 @@ async function getShopData(): Promise<{
   const productQuery = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,*images,*collection,*categories",
+    fields: "id,title,subtitle,description,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,+variants.metadata,*images,*collection,*categories",
   });
 
   const [productsResponse, categoriesResponse] = await Promise.all([
@@ -280,12 +335,15 @@ function renderProductCards(products: ShopProduct[]) {
       const safeBrand = escapeHtml(product.brand);
       const safePrice = product.price ?? 0;
       const canAddToCart = product.price !== null;
+      const priceMarkup = product.price === null
+        ? escapeHtml(product.priceLabel)
+        : `${product.discountPercentage ? `<strong>${escapeHtml(product.priceLabel)}</strong> <del>${escapeHtml(pesoFormatter.format(product.originalPrice || product.price))}</del> <em>${product.discountPercentage}% OFF</em>` : escapeHtml(product.priceLabel)}`;
 
-      return `<article class="shop-card ${product.status.includes("best-seller") ? "sale" : ""}" data-brand="${escapeHtml(product.brandSlug)}" data-category="${escapeHtml(product.categorySlug)}" data-status="${escapeHtml(product.status)}" data-price-value="${safePrice}" data-popularity="${96 - product.order}" data-order="${product.order}" data-product-id="${escapeHtml(product.id)}" data-sku="${escapeHtml(product.sku)}">
+      return `<article class="shop-card ${product.status.includes("best-seller") ? "sale" : ""}" role="button" tabindex="0" aria-label="View details for ${safeTitle}" data-brand="${escapeHtml(product.brandSlug)}" data-category="${escapeHtml(product.categorySlug)}" data-status="${escapeHtml(product.status)}" data-price-value="${safePrice}" data-popularity="${96 - product.order}" data-order="${product.order}" data-product-id="${escapeHtml(product.id)}" data-sku="${escapeHtml(product.sku)}">
         <div class="product-art"><img src="${escapeHtml(product.image)}" alt="${safeTitle}"></div>
         <span>${safeBrand}</span>
         <h2>${safeTitle}</h2>
-        <p>${escapeHtml(product.priceLabel)}</p>
+        <p class="shop-card-price">${priceMarkup}</p>
         <button type="button" data-price="${safePrice}" data-name="${safeTitle}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : "Set price first"}</button>
       </article>`;
     })
@@ -436,6 +494,7 @@ export default async function Page() {
         dangerouslySetInnerHTML={{ __html: buildShopMarkup(products, categories) }}
       />
       <Script src="/glowhouse-app.js" strategy="afterInteractive" />
+      <ProductDetailsModal products={products.map((product) => product.modal)} />
     </>
   );
 }

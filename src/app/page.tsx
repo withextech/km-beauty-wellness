@@ -11,7 +11,7 @@ function renderFlashProducts(products: StoreProduct[]) {
 
 function renderDiscoverProducts(products: StoreProduct[]) {
   if (!products.length) return `<p class="storefront-empty">No Discover products selected.</p>`;
-  return products.map((product) => `<article class="product-card"><div class="product-art"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><h3>${escapeHtml(product.title)}</h3><p>${product.priceLabel}</p><button type="button" ${productButton(product)}>Add to cart</button></article>`).join("");
+  return products.map((product) => { const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; return `<article class="product-card"><div class="product-art"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><h3>${escapeHtml(product.title)}</h3><p>${discount ? `<strong>${product.priceLabel}</strong> <s>₱${product.originalPrice.toLocaleString("en-PH")}</s> <em class="product-discount">${discount}% OFF</em>` : product.priceLabel}</p><button type="button" ${productButton(product)}>Add to cart</button></article>`; }).join("");
 }
 
 function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null) { return `
@@ -24,7 +24,6 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
       <a href="#home">Home</a>
       <a href="/shop">Shop</a>
       <a href="/contact">Contact Us</a>
-      <a href="/account">Account</a>
     </nav>
     <div class="actions">
       <button class="icon-action" type="button" aria-label="Search products" data-open-search>

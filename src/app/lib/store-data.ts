@@ -22,21 +22,21 @@ type ApiProduct = {
   id: string; title: string; handle: string; thumbnail?: string | null;
   images?: Array<{ url?: string | null }>;
   collection?: { title?: string | null } | null;
-  variants?: Array<{ id: string; calculated_price?: { calculated_amount?: number; original_amount?: number } | null }>;
+  variants?: Array<{ id: string; calculated_price?: { calculated_amount?: number; original_amount?: number } | null; metadata?: { promo_price?: number | string | null } | null }>;
 };
 
 function backend() {
-  return process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000";
+  return MEDUSA_URL;
 }
 
 function headers() {
-  return { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" };
+  return { "x-publishable-api-key": MEDUSA_PUBLISHABLE_KEY };
 }
 
-type ApiRegion = { id: string };
+type ApiRegion = { id: string; currency_code?: string };
 
 export async function getPricingRegionId(): Promise<string | null> {
-  if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return null;
+  if (!MEDUSA_PUBLISHABLE_KEY) return null;
 
   const response = await fetch(`${backend()}/store/regions?limit=100`, {
     headers: headers(),
@@ -45,18 +45,18 @@ export async function getPricingRegionId(): Promise<string | null> {
   if (!response.ok) return null;
 
   const data = (await response.json()) as { regions?: ApiRegion[] };
-  return data.regions?.[0]?.id || null;
+  return data.regions?.find((region) => region.currency_code?.toLowerCase() === "php")?.id || data.regions?.[0]?.id || null;
 }
 
 export async function getStoreProducts(): Promise<StoreProduct[]> {
-  if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return [];
+  if (!MEDUSA_PUBLISHABLE_KEY) return [];
   const regionId = await getPricingRegionId();
   if (!regionId) return [];
 
   const query = new URLSearchParams({
     limit: "100",
     region_id: regionId,
-    fields: "id,title,handle,thumbnail,*images,*collection,*variants.calculated_price,+variants.sku",
+    fields: "id,title,handle,thumbnail,*images,*collection,*variants.calculated_price,+variants.sku,+variants.metadata",
   });
   const response = await fetch(`${backend()}/store/products?${query}`, {
     headers: headers(),
@@ -67,7 +67,10 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
   return (data.products || []).flatMap((product) => {
     const variant = product.variants?.[0];
     const calculated = variant?.calculated_price;
-    const price = Number(calculated?.calculated_amount ?? calculated?.original_amount ?? 0);
+    const originalPrice = Number(calculated?.original_amount ?? calculated?.calculated_amount ?? 0);
+    const rawPromoPrice = variant?.metadata?.promo_price;
+    const promoPrice = typeof rawPromoPrice === "number" ? rawPromoPrice : rawPromoPrice ? Number(rawPromoPrice) : 0;
+    const price = promoPrice > 0 && originalPrice > promoPrice ? promoPrice : Number(calculated?.calculated_amount ?? originalPrice);
     if (!variant?.id || !price) return [];
     return [{
       id: String(product.id),
@@ -77,7 +80,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
       brand: String(product.collection?.title || "KM Beauty"),
       image: String(product.thumbnail || product.images?.[0]?.url || "/assets/hero-sunblush-clean.png"),
       price,
-      originalPrice: Number(calculated?.original_amount ?? price),
+      originalPrice: originalPrice || price,
       priceLabel: money.format(price),
     }];
   });
@@ -99,3 +102,4 @@ export function escapeHtml(value: string) {
 export function productButton(product: StoreProduct) {
   return `data-price="${product.price}" data-name="${escapeHtml(product.title)}" data-product-id="${product.id}" data-variant-id="${product.variantId}"`;
 }
+import { MEDUSA_PUBLISHABLE_KEY, MEDUSA_URL } from "./medusa-config";

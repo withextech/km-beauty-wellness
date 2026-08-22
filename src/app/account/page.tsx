@@ -20,7 +20,6 @@ function StoreHeader() {
           <Link href="/">Home</Link>
           <Link href="/shop">Shop</Link>
           <Link href="/contact">Contact Us</Link>
-          <Link href="/account">Account</Link>
         </nav>
         <div className="actions">
           <button className="icon-action" type="button" aria-label="Search products" data-open-search>

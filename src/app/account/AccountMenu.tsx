@@ -12,7 +12,14 @@ export function AccountMenu() {
         type="button"
         aria-label="Open account menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={(event) => {
+          if (!localStorage.getItem("km-customer-token")) {
+            setIsOpen(false);
+            document.dispatchEvent(new CustomEvent("km-open-customer-login", { detail: { trigger: event.currentTarget } }));
+            return;
+          }
+          setIsOpen((current) => !current);
+        }}
       >
         ♙
       </button>
