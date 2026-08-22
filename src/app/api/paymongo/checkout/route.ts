@@ -15,6 +15,9 @@ type CheckoutResponse = { data: { id: string; attributes: { checkout_url: string
 
 export async function POST(request: Request) {
   try {
+    if (!process.env.PAYMONGO_SECRET_KEY) {
+      return Response.json({ message: "QR Ph payment is not active yet. Please contact the store while PayMongo setup is being completed." }, { status: 503 });
+    }
     const body = await request.json();
     const cartId = typeof body.cart_id === "string" ? body.cart_id : "";
     if (!/^cart_[A-Za-z0-9]+$/.test(cartId)) return Response.json({ message: "Invalid cart." }, { status: 400 });

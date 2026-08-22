@@ -38,9 +38,6 @@ export function CheckoutForm() {
       const cartId = cartData.cart.id;
       for (const line of lines) await medusaRequest(`/store/carts/${cartId}/line-items`, { method: "POST", body: JSON.stringify({ variant_id: line.variantId, quantity: line.quantity }) }, token);
       await medusaRequest(`/store/carts/${cartId}`, { method: "POST", body: JSON.stringify({ email: form.get("email"), shipping_address: { first_name: form.get("first_name"), last_name: form.get("last_name"), phone: form.get("phone"), address_1: form.get("address_1"), address_2: form.get("barangay"), city: form.get("city"), province: form.get("province"), postal_code: form.get("postal_code"), country_code: "ph" } }) }, token);
-      const shipping = await medusaRequest<{ shipping_options: Array<{ id: string }> }>(`/store/shipping-options?cart_id=${cartId}`, {}, token);
-      if (!shipping.shipping_options[0]) throw new Error("No shipping option is available for this address.");
-      await medusaRequest(`/store/carts/${cartId}/shipping-methods`, { method: "POST", body: JSON.stringify({ option_id: shipping.shipping_options[0].id }) }, token);
       const response = await fetch("/api/paymongo/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ cart_id: cartId }) });
       const payment = await response.json();
       if (!response.ok || !payment.checkout_url) throw new Error(payment.message || "Unable to start QR Ph payment.");
