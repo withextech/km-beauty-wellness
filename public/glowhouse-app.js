@@ -42,12 +42,13 @@ const renderCart = () => {
     button.classList.toggle("has-cart-quantity", quantity > 0);
     button.setAttribute("aria-label", quantity ? `${quantity} in cart. Decrease on the left or increase on the right.` : "Add to cart");
     button.innerHTML = quantity
-      ? `<span data-cart-action="decrease" aria-hidden="true">−</span><b>${quantity} in cart</b><span data-cart-action="increase" aria-hidden="true">+</span>`
+      ? `<span data-cart-action="decrease" aria-hidden="true">−</span><b><strong>${quantity}</strong><small>in cart</small></b><span data-cart-action="increase" aria-hidden="true">+</span>`
       : "Add to cart";
   });
   if (cartLines) {
     cartLines.innerHTML = cartItems.length
       ? cartItems.map((item, index) => `<div class="cart-line">
+          <div class="cart-line-image"><img src="${item.image || "/assets/hero-sunblush-clean.png"}" alt=""></div>
           <div class="cart-line-main">
             <b>${item.name}</b>
             <small>${formatPrice(item.price)} each</small>
@@ -133,7 +134,8 @@ document.addEventListener("click", (event) => {
       price,
       quantity: 1,
       productId,
-      variantId
+      variantId,
+      image: button.dataset.image || ""
     });
   }
   renderCart();

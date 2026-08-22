@@ -352,7 +352,7 @@ function renderProductCards(products: ShopProduct[]) {
         <span>${safeBrand}</span>
         <h2>${safeTitle}</h2>
         <p class="shop-card-price">${priceMarkup}</p>
-        <button type="button" data-price="${safePrice}" data-name="${safeTitle}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : "Set price first"}</button>
+        <button type="button" data-price="${safePrice}" data-name="${safeTitle}" data-image="${escapeHtml(product.image)}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : "Set price first"}</button>
       </article>`;
     })
     .join("");
@@ -479,7 +479,6 @@ function buildShopMarkup(products: ShopProduct[], categories: ShopCategory[]) {
   <aside class="cart-drawer" aria-label="Shopping cart" data-cart-drawer>
     <button class="panel-close" type="button" aria-label="Close cart" data-close-panels>×</button>
     <span>Your Cart</span>
-    <h2>Shopping Bag</h2>
     <div class="cart-lines" data-cart-lines><p>Your cart is empty.</p></div>
     <div class="order-summary" data-cart-summary>
       <h3>Order Summary</h3>

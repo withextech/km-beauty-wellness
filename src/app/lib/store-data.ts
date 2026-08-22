@@ -100,6 +100,6 @@ export function escapeHtml(value: string) {
 }
 
 export function productButton(product: StoreProduct) {
-  return `data-price="${product.price}" data-name="${escapeHtml(product.title)}" data-product-id="${product.id}" data-variant-id="${product.variantId}"`;
+  return `data-price="${product.price}" data-name="${escapeHtml(product.title)}" data-image="${escapeHtml(product.image)}" data-product-id="${product.id}" data-variant-id="${product.variantId}"`;
 }
 import { MEDUSA_PUBLISHABLE_KEY, MEDUSA_URL } from "./medusa-config";
