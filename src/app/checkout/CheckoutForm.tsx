@@ -35,13 +35,26 @@ export function CheckoutForm() {
     setPending(false);
   }
 
-  function markDummyPaid() {
+  async function markDummyPaid() {
     if (!dummyPayment) return;
-    const dummyOrder = { id: `dummy-${Date.now()}`, display_id: dummyPayment.orderNumber, created_at: new Date().toISOString(), total, subtotal, shipping_total: 0, discount_total: 0, currency_code: "PHP", fulfillment_status: "not_fulfilled", payment_status: "captured", shipping_address: { ...dummyPayment.address, address_2: dummyPayment.address.barangay }, items: lines.map((line, index) => ({ id: `dummy-item-${index}-${Date.now()}`, variant_id: line.variantId, title: line.name, quantity: line.quantity, unit_price: line.price, thumbnail: line.image || null })) };
-    const stored = JSON.parse(localStorage.getItem("km-dummy-orders") || "[]");
-    localStorage.setItem("km-dummy-orders", JSON.stringify([dummyOrder, ...(Array.isArray(stored) ? stored : [])]));
-    localStorage.removeItem("km-cart");
-    window.location.assign(`/checkout/success?dummy=1&order=${dummyPayment.orderNumber}`);
+    setPending(true); setMessage("");
+    try {
+      const response = await fetch("/api/checkout/place-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: dummyPayment.address, lines }),
+      });
+      const result = await response.json() as { display_id?: number | string; message?: string; order_id?: string };
+      if (!response.ok || !result.order_id) throw new Error(result.message || "Unable to place your order.");
+      const completedOrder = { id: result.order_id, display_id: result.display_id, created_at: new Date().toISOString(), total, subtotal, shipping_total: 0, discount_total: 0, currency_code: "PHP", fulfillment_status: "not_fulfilled", payment_status: "authorized", shipping_address: { ...dummyPayment.address, address_2: dummyPayment.address.barangay }, items: lines.map((line, index) => ({ id: `item-${index}-${result.order_id}`, variant_id: line.variantId, title: line.name, quantity: line.quantity, unit_price: line.price, thumbnail: line.image || null })) };
+      localStorage.setItem("km-dummy-orders", JSON.stringify([completedOrder]));
+      localStorage.removeItem("km-cart");
+      window.location.assign(`/checkout/success?order=${encodeURIComponent(String(result.display_id || result.order_id))}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to place your order.");
+      setDummyPayment(null);
+      setPending(false);
+    }
   }
 
   return <section className="checkout-card checkout-premium">
@@ -67,6 +80,6 @@ export function CheckoutForm() {
       </aside>
     </div>
     {message ? <p className="auth-message">{message}</p> : null}
-    {dummyPayment ? <div className="dummy-payment-backdrop" role="dialog" aria-modal="true" aria-labelledby="dummy-payment-title"><section className="dummy-payment-modal"><button type="button" aria-label="Close dummy payment" onClick={() => setDummyPayment(null)}>×</button><img className="dummy-payment-logo" src="/assets/qrph-logo.svg" alt="QR Ph" /><span>Checkout test mode</span><h2 id="dummy-payment-title">Scan dummy QR</h2><p>This QR is for order simulation only. No real payment will be collected.</p><img className="dummy-qr-code" src="/assets/dummy-qr.svg" alt="Dummy QR code" /><dl><div><dt>Order</dt><dd>#{dummyPayment.orderNumber}</dd></div><div><dt>Amount</dt><dd>{peso.format(total)}</dd></div></dl><button className="dummy-paid-button" type="button" onClick={markDummyPaid}>Mark as dummy paid</button></section></div> : null}
+    {dummyPayment ? <div className="dummy-payment-backdrop" role="dialog" aria-modal="true" aria-labelledby="dummy-payment-title"><section className="dummy-payment-modal"><button disabled={pending} type="button" aria-label="Close dummy payment" onClick={() => setDummyPayment(null)}>×</button><img className="dummy-payment-logo" src="/assets/qrph-logo.svg" alt="QR Ph" /><span>Checkout test mode</span><h2 id="dummy-payment-title">Scan dummy QR</h2><p>This QR is for order simulation only. No real payment will be collected.</p><img className="dummy-qr-code" src="/assets/dummy-qr.svg" alt="Dummy QR code" /><dl><div><dt>Order</dt><dd>#{dummyPayment.orderNumber}</dd></div><div><dt>Amount</dt><dd>{peso.format(total)}</dd></div></dl><button className="dummy-paid-button" disabled={pending} type="button" onClick={markDummyPaid}>{pending ? "Creating order…" : "Mark as dummy paid"}</button></section></div> : null}
   </section>;
 }
