@@ -305,6 +305,9 @@ function renderBrandFilters(products: ShopProduct[]) {
     },
     {},
   );
+  counts.herskin ||= { label: "HerSkin", count: 0 };
+  counts.neko ||= { label: "Neko", count: 0 };
+  counts.sevendays ||= { label: "Sevendays", count: 0 };
 
   const links = Object.entries(counts)
     .map(

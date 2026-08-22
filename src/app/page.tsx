@@ -118,19 +118,19 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
         <img src="/assets/logo-herskin.png" alt="Her Skin">
         <h3>Face care</h3>
         <p>Daily cleanse, prep, hydrate, and protect routines.</p>
-        <a href="/shop">Shop Her Skin</a>
+        <a href="/shop?brand=herskin">Shop Her Skin</a>
       </article>
       <article>
         <img src="/assets/logo-neko.png" alt="Neko">
         <h3>Wellness</h3>
         <p>Beauty support from within for consistent self-care.</p>
-        <a href="/shop">Shop Neko</a>
+        <a href="/shop?brand=neko">Shop Neko</a>
       </article>
       <article>
         <img src="/assets/logo-sevendays.png" alt="Sevendays">
         <h3>Body care</h3>
         <p>Body glow, exfoliation, and all-week skin basics.</p>
-        <a href="/shop">Shop Sevendays</a>
+        <a href="/shop?brand=sevendays">Shop Sevendays</a>
       </article>
     </section>
 
