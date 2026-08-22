@@ -33,9 +33,32 @@ function headers() {
   return { "x-publishable-api-key": process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || "" };
 }
 
+type ApiRegion = { id: string };
+
+export async function getPricingRegionId(): Promise<string | null> {
+  if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return null;
+
+  const response = await fetch(`${backend()}/store/regions?limit=100`, {
+    headers: headers(),
+    cache: "no-store",
+  });
+  if (!response.ok) return null;
+
+  const data = (await response.json()) as { regions?: ApiRegion[] };
+  return data.regions?.[0]?.id || null;
+}
+
 export async function getStoreProducts(): Promise<StoreProduct[]> {
   if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return [];
-  const response = await fetch(`${backend()}/store/products?limit=100&fields=id,title,handle,thumbnail,*images,*collection,*variants.calculated_price,+variants.sku`, {
+  const regionId = await getPricingRegionId();
+  if (!regionId) return [];
+
+  const query = new URLSearchParams({
+    limit: "100",
+    region_id: regionId,
+    fields: "id,title,handle,thumbnail,*images,*collection,*variants.calculated_price,+variants.sku",
+  });
+  const response = await fetch(`${backend()}/store/products?${query}`, {
     headers: headers(),
     cache: "no-store",
   });

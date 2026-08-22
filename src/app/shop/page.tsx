@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { getPricingRegionId } from "../lib/store-data";
 
 export const metadata: Metadata = {
   title: "Shop | KM Beauty & Wellness",
@@ -162,9 +163,20 @@ async function getShopData(): Promise<{
     return { categories: [], products: [] };
   }
 
+  const regionId = await getPricingRegionId();
+  if (!regionId) {
+    return { categories: [], products: [] };
+  }
+
+  const productQuery = new URLSearchParams({
+    limit: "100",
+    region_id: regionId,
+    fields: "id,title,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,*images,*collection,*categories",
+  });
+
   const [productsResponse, categoriesResponse] = await Promise.all([
     fetch(
-      `${backendUrl}/store/products?limit=100&fields=id,title,handle,thumbnail,metadata,*variants.calculated_price,+variants.sku,*images,*collection,*categories`,
+      `${backendUrl}/store/products?${productQuery}`,
       {
         headers: {
           "x-publishable-api-key": publishableKey,
