@@ -1,7 +1,6 @@
 const totalEls = document.querySelectorAll("[data-cart-total]");
 const subtotalEls = document.querySelectorAll("[data-cart-subtotal]");
 const itemsTotalEls = document.querySelectorAll("[data-cart-items-total]");
-const shippingEls = document.querySelectorAll("[data-cart-shipping]");
 const countEls = document.querySelectorAll("[data-cart-count]");
 const floatingCart = document.querySelector(".floating-cart");
 const cartLines = document.querySelector("[data-cart-lines]");
@@ -97,22 +96,21 @@ const renderCart = () => {
   localStorage.setItem("km-cart", JSON.stringify(cartItems));
   const cartValue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const shippingFee = cartItems.length ? 100 : 0;
-  const total = formatPrice(cartValue + shippingFee);
+  const total = formatPrice(cartValue);
   totalEls.forEach((item) => {
     item.textContent = total;
   });
   subtotalEls.forEach((item) => {
     item.textContent = formatPrice(cartValue);
   });
-  shippingEls.forEach((item) => {
-    item.textContent = formatPrice(shippingFee);
-  });
   itemsTotalEls.forEach((item) => {
     item.textContent = cartCount.toString();
   });
   countEls.forEach((item) => {
     item.textContent = cartCount;
+  });
+  document.querySelectorAll("[data-cart-reset]").forEach((button) => {
+    button.disabled = cartItems.length === 0;
   });
   document.querySelectorAll("[data-price]").forEach((button) => {
     const variantId = button.dataset.variantId || "";
@@ -157,6 +155,16 @@ const updateCartItem = (index, nextQuantity) => {
   renderCart();
 };
 
+const syncCartFromStorage = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem("km-cart") || "[]");
+    cartItems.splice(0, cartItems.length, ...(Array.isArray(stored) ? stored : []));
+  } catch {
+    cartItems.splice(0, cartItems.length);
+  }
+  renderCart();
+};
+
 cartLines?.addEventListener("click", (event) => {
   const decrease = event.target.closest("[data-cart-decrease]");
   const increase = event.target.closest("[data-cart-increase]");
@@ -174,6 +182,11 @@ cartLines?.addEventListener("click", (event) => {
     updateCartItem(Number(remove.dataset.cartRemove), 0);
   }
 });
+document.querySelectorAll("[data-cart-reset]").forEach((button) => button.addEventListener("click", () => {
+  cartItems.splice(0, cartItems.length);
+  renderCart();
+}));
+window.addEventListener("pageshow", syncCartFromStorage);
 
 const closePanels = () => {
   overlay?.classList.remove("show");

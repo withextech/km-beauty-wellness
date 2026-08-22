@@ -43,16 +43,14 @@ function StoreHeader() {
 
       <aside className="cart-drawer" aria-label="Shopping cart" data-cart-drawer>
         <button className="panel-close" type="button" aria-label="Close cart" data-close-panels>×</button>
-        <span>Your Cart</span>
+        <div className="cart-drawer-head"><span>Your Cart</span><button type="button" data-cart-reset>Clear cart</button></div>
         <h2>Shopping Bag</h2>
         <div className="cart-lines" data-cart-lines><p>Your cart is empty.</p></div>
         <div className="order-summary" data-cart-summary>
           <h3>Order Summary</h3>
           <div><small>Items</small><strong data-cart-items-total>0</strong></div>
-          <div><small>Subtotal</small><strong data-cart-subtotal>₱0.00</strong></div>
-          <div><small>Flat shipping</small><strong data-cart-shipping>₱0.00</strong></div>
         </div>
-        <div className="cart-summary"><small>Grand total</small><strong data-cart-total>₱0.00</strong></div>
+        <div className="cart-summary"><small>Subtotal</small><strong data-cart-total>₱0.00</strong></div>
         <Link className="checkout-button" href="/checkout">Checkout</Link>
       </aside>
     </>

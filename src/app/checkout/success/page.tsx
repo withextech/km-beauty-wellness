@@ -31,7 +31,7 @@ export default function CheckoutSuccessPage() {
       {order ? <div className="checkout-confirmation-summary">
         <header><div><span>Order summary</span><h2>{order.items.reduce((sum, item) => sum + item.quantity, 0)} items</h2></div><b>Paid</b></header>
         <div className="confirmation-items">{order.items.map((item) => <article key={item.id}><div><img src={item.thumbnail || "/assets/hero-sunblush-clean.png"} alt="" /><b>{item.quantity}</b></div><section><strong>{item.title}</strong><small>{peso.format(item.unit_price)} each</small></section><em>{peso.format(item.unit_price * item.quantity)}</em></article>)}</div>
-        <dl><div><dt>Products subtotal</dt><dd>{peso.format(order.subtotal)}</dd></div><div><dt>Shipping</dt><dd>{peso.format(order.shipping_total)}</dd></div><div><dt>Total paid</dt><dd>{peso.format(order.total)}</dd></div></dl>
+        <dl><div><dt>Products subtotal</dt><dd>{peso.format(order.subtotal)}</dd></div>{order.shipping_total > 0 ? <div><dt>Shipping</dt><dd>{peso.format(order.shipping_total)}</dd></div> : null}<div><dt>Total paid</dt><dd>{peso.format(order.total)}</dd></div></dl>
       </div> : <div className="checkout-confirmation-summary confirmation-processing"><p>Your order details are being prepared.</p></div>}
       <div className="checkout-confirmation-actions"><Link href="/account">View My Orders</Link><Link href="/shop">Back to Shop</Link></div>
       <small className="checkout-confirmation-note">Test mode only — no real payment was collected.</small>

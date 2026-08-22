@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type CartLine = { variantId: string; name: string; image?: string; price: number; quantity: number };
-const SHIPPING_FEE = 100;
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
 export function CheckoutForm() {
@@ -24,7 +23,7 @@ export function CheckoutForm() {
   }, []);
 
   const subtotal = useMemo(() => lines.reduce((sum, line) => sum + line.price * line.quantity, 0), [lines]);
-  const total = subtotal + (lines.length ? SHIPPING_FEE : 0);
+  const total = subtotal;
 
   function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,7 +37,7 @@ export function CheckoutForm() {
 
   function markDummyPaid() {
     if (!dummyPayment) return;
-    const dummyOrder = { id: `dummy-${Date.now()}`, display_id: dummyPayment.orderNumber, created_at: new Date().toISOString(), total, subtotal, shipping_total: SHIPPING_FEE, discount_total: 0, currency_code: "PHP", fulfillment_status: "not_fulfilled", payment_status: "captured", shipping_address: { ...dummyPayment.address, address_2: dummyPayment.address.barangay }, items: lines.map((line, index) => ({ id: `dummy-item-${index}-${Date.now()}`, variant_id: line.variantId, title: line.name, quantity: line.quantity, unit_price: line.price, thumbnail: line.image || null })) };
+    const dummyOrder = { id: `dummy-${Date.now()}`, display_id: dummyPayment.orderNumber, created_at: new Date().toISOString(), total, subtotal, shipping_total: 0, discount_total: 0, currency_code: "PHP", fulfillment_status: "not_fulfilled", payment_status: "captured", shipping_address: { ...dummyPayment.address, address_2: dummyPayment.address.barangay }, items: lines.map((line, index) => ({ id: `dummy-item-${index}-${Date.now()}`, variant_id: line.variantId, title: line.name, quantity: line.quantity, unit_price: line.price, thumbnail: line.image || null })) };
     const stored = JSON.parse(localStorage.getItem("km-dummy-orders") || "[]");
     localStorage.setItem("km-dummy-orders", JSON.stringify([dummyOrder, ...(Array.isArray(stored) ? stored : [])]));
     localStorage.removeItem("km-cart");
@@ -64,7 +63,7 @@ export function CheckoutForm() {
       <aside>
         <div className="checkout-summary-head"><div><span>Order summary</span><h2>{lines.reduce((sum, line) => sum + line.quantity, 0)} items</h2></div><Link href="/shop?cart=open">Edit cart</Link></div>
         <div className="checkout-items">{lines.length ? lines.map((line) => <article className="checkout-line" key={line.variantId}><div className="checkout-line-image"><img src={line.image || "/assets/hero-sunblush-clean.png"} alt="" /><b>{line.quantity}</b></div><div><strong>{line.name}</strong><small>{peso.format(line.price)} each</small></div><em>{peso.format(line.price * line.quantity)}</em></article>) : <div className="checkout-empty"><b>Your cart is empty.</b><Link href="/shop">Browse products</Link></div>}</div>
-        <dl className="checkout-totals"><div><dt>Products subtotal</dt><dd>{peso.format(subtotal)}</dd></div><div><dt>Shipping fee</dt><dd>{peso.format(lines.length ? SHIPPING_FEE : 0)}</dd></div><div><dt>Total</dt><dd>{peso.format(total)}</dd></div></dl>
+        <dl className="checkout-totals"><div><dt>Items</dt><dd>{lines.reduce((sum, line) => sum + line.quantity, 0)}</dd></div><div><dt>Subtotal</dt><dd>{peso.format(subtotal)}</dd></div></dl>
       </aside>
     </div>
     {message ? <p className="auth-message">{message}</p> : null}
