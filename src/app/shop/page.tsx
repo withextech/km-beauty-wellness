@@ -360,7 +360,7 @@ function renderProductCards(products: ShopProduct[]) {
         <span>${safeBrand}</span>
         <h2>${safeTitle}</h2>
         <p class="shop-card-price">${priceMarkup}</p>
-        <button type="button" data-price="${safePrice}" data-stock="${product.inventoryQuantity}" data-name="${safeTitle}" data-image="${escapeHtml(product.image)}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : product.inventoryQuantity < 1 ? "Sold out" : "Set price first"}</button>
+        <button type="button" data-price="${safePrice}" data-stock="${product.inventoryQuantity}" data-name="${safeTitle}" data-image="${escapeHtml(product.image)}" data-product-id="${escapeHtml(product.id)}" data-variant-id="${escapeHtml(product.variantId)}" ${canAddToCart ? "" : "disabled"}>${canAddToCart ? "Add to cart" : product.inventoryQuantity < 1 ? "Out of stock" : "Set price first"}</button>
       </article>`;
     })
     .join("");

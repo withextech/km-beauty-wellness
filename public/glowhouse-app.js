@@ -11,6 +11,19 @@ const cartDrawer = document.querySelector("[data-cart-drawer]");
 const shopSidebar = document.querySelector(".shop-sidebar");
 const shopToolbar = document.querySelector(".shop-toolbar");
 const cartItems = JSON.parse(localStorage.getItem("km-cart") || "[]");
+let stockNoticeTimer;
+
+const showStockNotice = (message = "You’ve reached the maximum available quantity.") => {
+  let notice = document.querySelector("[data-stock-notice]");
+  if (!notice) {
+    document.body.insertAdjacentHTML("beforeend", `<div class="stock-limit-notice" role="status" aria-live="polite" data-stock-notice></div>`);
+    notice = document.querySelector("[data-stock-notice]");
+  }
+  notice.textContent = message;
+  notice.classList.add("show");
+  clearTimeout(stockNoticeTimer);
+  stockNoticeTimer = setTimeout(() => notice.classList.remove("show"), 2600);
+};
 
 document.body.insertAdjacentHTML("beforeend", `<section class="contact-details-modal" aria-label="Contact KM Beauty and Wellness" aria-modal="true" role="dialog" data-contact-modal>
   <button class="contact-details-close" type="button" aria-label="Close contact details" data-close-panels>×</button>
@@ -127,10 +140,19 @@ const renderCart = () => {
     const productId = button.dataset.productId || "";
     const line = cartItems.find((item) => variantId ? item.variantId === variantId : item.productId === productId);
     const quantity = line?.quantity || 0;
+    const stock = Math.max(0, Number(button.dataset.stock) || 0);
+    const atMaximum = quantity > 0 && stock > 0 && quantity >= stock;
+    if (stock < 1) {
+      button.classList.remove("has-cart-quantity");
+      button.disabled = true;
+      button.setAttribute("aria-label", "Out of stock");
+      button.innerHTML = "Out of stock";
+      return;
+    }
     button.classList.toggle("has-cart-quantity", quantity > 0);
     button.setAttribute("aria-label", quantity ? `${quantity} in cart. Decrease on the left or increase on the right.` : "Add to cart");
     button.innerHTML = quantity
-      ? `<span data-cart-action="decrease" aria-hidden="true">−</span><b><strong>${quantity}</strong><small>in cart</small></b><span data-cart-action="increase" aria-hidden="true">+</span>`
+      ? `<span data-cart-action="decrease" aria-hidden="true">−</span><b><strong>${quantity}</strong><small>${atMaximum ? "max stock" : "in cart"}</small></b><span data-cart-action="increase" class="${atMaximum ? "at-limit" : ""}" aria-hidden="true">+</span>`
       : "Add to cart";
   });
   if (cartLines) {
@@ -145,6 +167,7 @@ const renderCart = () => {
               <span>${item.quantity}</span>
               <button type="button" data-cart-increase="${index}" aria-label="Increase quantity" ${item.quantity >= item.stock ? "disabled" : ""}>+</button>
             </div>
+            ${item.quantity >= item.stock ? `<small class="cart-stock-limit">Maximum available quantity</small>` : ""}
           </div>
           <div class="cart-line-side">
             <strong>${formatPrice(item.price * item.quantity)}</strong>
@@ -186,6 +209,10 @@ cartLines?.addEventListener("click", (event) => {
   }
   if (increase) {
     const index = Number(increase.dataset.cartIncrease);
+    if (cartItems[index].quantity >= cartItems[index].stock) {
+      showStockNotice();
+      return;
+    }
     updateCartItem(index, cartItems[index].quantity + 1);
   }
   if (remove) {
@@ -232,7 +259,10 @@ document.addEventListener("click", (event) => {
     return;
   }
   if (existing) {
-    if (existing.quantity >= existing.stock) return;
+    if (existing.quantity >= existing.stock) {
+      showStockNotice();
+      return;
+    }
     existing.quantity += 1;
   } else {
     const stock = Math.max(0, Number(button.dataset.stock) || 0);
