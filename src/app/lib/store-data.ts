@@ -11,6 +11,8 @@ export type StoreProduct = {
 };
 
 export type HomepageCms = {
+  hero_images: string[];
+  discover_image: string | null;
   flash_sale_product_ids: string[];
   flash_sale_ends_at: string | null;
   discover_product_ids: string[];
@@ -87,7 +89,7 @@ export async function getStoreProducts(): Promise<StoreProduct[]> {
 }
 
 export async function getHomepageCms(): Promise<HomepageCms> {
-  const fallback = { flash_sale_product_ids: [], flash_sale_ends_at: null, discover_product_ids: [] };
+  const fallback = { hero_images: [], discover_image: null, flash_sale_product_ids: [], flash_sale_ends_at: null, discover_product_ids: [] };
   if (!process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY) return fallback;
   const response = await fetch(`${backend()}/store/cms`, { headers: headers(), cache: "no-store" });
   if (!response.ok) return fallback;

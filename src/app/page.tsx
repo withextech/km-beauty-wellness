@@ -14,7 +14,9 @@ function renderDiscoverProducts(products: StoreProduct[]) {
   return products.map((product) => { const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; return `<article class="product-card"><div class="product-art"><img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><h3>${escapeHtml(product.title)}</h3><p>${discount ? `<strong>${product.priceLabel}</strong> <s>₱${product.originalPrice.toLocaleString("en-PH")}</s> <em class="product-discount">${discount}% OFF</em>` : product.priceLabel}</p><button type="button" ${productButton(product)}>Add to cart</button></article>`; }).join("");
 }
 
-function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null) { return `
+function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null, heroImages: string[], discoverImage: string | null) {
+  const hero = ["/assets/hero-herskin-clean.jpg", "/assets/hero-founder-clean.jpg", "/assets/hero-sunblush-clean.png", "/assets/hero-neko-product.png"].map((fallback, index) => heroImages[index] || fallback);
+  return `
   <header class="header home-header">
     <a href="#home" class="logo" aria-label="KM Beauty and Wellness">
       <img src="/assets/km-logo-cropped.png" alt="KM Kat Melendez">
@@ -43,19 +45,19 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
     <section class="hero-carousel" aria-label="Featured campaigns">
       <div class="carousel-bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
       <article class="hero-slide active">
-        <div class="slide-media"><img src="/assets/hero-herskin-clean.jpg" alt="Her Skin products and brand ambassador"></div>
+        <div class="slide-media"><img src="${escapeHtml(hero[0])}" alt="Her Skin products and brand ambassador"></div>
         <div class="slide-copy"><span class="hero-kicker">The home of everyday glow</span><h1>Your glow,<br><em>your way.</em></h1><p>Feel-good beauty and wellness essentials made for your everyday glow-up.</p><div class="button-row"><a class="hero-link filled" href="/shop">Visit Shop</a></div></div>
       </article>
       <article class="hero-slide">
-        <div class="slide-media"><img src="/assets/hero-founder-clean.jpg" alt="Kath Melendez, CEO and founder"></div>
+        <div class="slide-media"><img src="${escapeHtml(hero[1])}" alt="Kath Melendez, CEO and founder"></div>
         <div class="slide-copy"><span class="hero-kicker">A note from our founder</span><h1>Beauty with<br><em>heart & purpose.</em></h1><p>Building confidence, trusted brands, and opportunities for a brighter community.</p><div class="button-row"><a class="hero-link filled" href="#about">Discover the brands</a></div></div>
       </article>
       <article class="hero-slide">
-        <div class="slide-media"><img src="/assets/hero-sunblush-clean.png" alt="Her Skin Sun Blush Daily Multi-Defense sunscreen"></div>
+        <div class="slide-media"><img src="${escapeHtml(hero[2])}" alt="Her Skin Sun Blush Daily Multi-Defense sunscreen"></div>
         <div class="slide-copy"><span class="hero-kicker">New from Her Skin</span><h1>Sunny days.<br><em>Happy skin.</em></h1><p>Your bright and bubbly daily multi-defense sunscreen.</p><div class="button-row"><a class="hero-link filled" href="#campaign">Discover Sun Blush</a></div></div>
       </article>
       <article class="hero-slide neko-product-slide">
-        <div class="slide-media"><img src="/assets/hero-neko-product.png" alt="Neko beauty supplement product campaign"></div>
+        <div class="slide-media"><img src="${escapeHtml(hero[3])}" alt="Neko beauty supplement product campaign"></div>
         <div class="slide-copy"><span class="hero-kicker">Featured from Neko</span><h1>Soft glow,<br><em>from within.</em></h1><p>Beauty support with a dreamy, feel-good wellness ritual.</p><div class="button-row"><a class="hero-link filled" href="/shop">Shop Neko</a></div></div>
       </article>
       <div class="carousel-footer"><div class="carousel-dots" role="tablist" aria-label="Choose slide"><button class="active" aria-label="Slide 1"></button><button aria-label="Slide 2"></button><button aria-label="Slide 3"></button><button aria-label="Slide 4"></button></div></div>
@@ -82,7 +84,7 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
       </div>
       <div class="product-layout">
         <a class="editorial-tile" href="/shop">
-          <img src="/assets/sun-blush-ambassador.jpg" alt="Her Skin Sun Blush ambassador campaign">
+          <img src="${escapeHtml(discoverImage || "/assets/sun-blush-ambassador.jpg")}" alt="Her Skin Sun Blush ambassador campaign">
           <span>Discover the power of natural beauty</span>
           <strong>Visit Shop</strong>
         </a>
@@ -186,9 +188,9 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
       <h3>Order Summary</h3>
       <div><small>Items</small><strong data-cart-items-total>0</strong></div>
       <div><small>Subtotal</small><strong data-cart-subtotal>₱0.00</strong></div>
-      <div><small>Shipping</small><strong>Calculated at checkout</strong></div>
+      <div><small>Flat shipping</small><strong data-cart-shipping>₱0.00</strong></div>
     </div>
-    <div class="cart-summary"><small>Total</small><strong data-cart-total>₱0.00</strong></div>
+    <div class="cart-summary"><small>Grand total</small><strong data-cart-total>₱0.00</strong></div>
     <a class="checkout-button" href="/checkout">Checkout</a>
   </aside>`; }
 
@@ -201,7 +203,7 @@ export default async function Home() {
   const discoverProducts = cms.discover_product_ids.map((id) => byId.get(id)).filter((product): product is StoreProduct => Boolean(product));
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: glowhouseMarkup(flashProducts, discoverProducts, cms.flash_sale_ends_at) }} />
+      <div dangerouslySetInnerHTML={{ __html: glowhouseMarkup(flashProducts, discoverProducts, cms.flash_sale_ends_at, cms.hero_images, cms.discover_image) }} />
       <Script src="/glowhouse-app.js" strategy="afterInteractive" />
     </>
   );
