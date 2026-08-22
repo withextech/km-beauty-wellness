@@ -41,14 +41,6 @@ function StoreHeader() {
 
       <div className="overlay" data-overlay />
 
-      <section className="search-panel" aria-label="Search products" data-search-panel>
-        <form>
-          <input type="search" placeholder="Search KM products" />
-          <button type="submit">Search</button>
-        </form>
-        <button className="panel-close" type="button" aria-label="Close search" data-close-panels>×</button>
-      </section>
-
       <aside className="cart-drawer" aria-label="Shopping cart" data-cart-drawer>
         <button className="panel-close" type="button" aria-label="Close cart" data-close-panels>×</button>
         <span>Your Cart</span>

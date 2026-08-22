@@ -102,6 +102,8 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
         }
       }
     };
+    const requestedProductId = new URLSearchParams(window.location.search).get("product");
+    if (requestedProductId) openProduct(requestedProductId);
     document.addEventListener("click", click);
     document.addEventListener("keydown", keydown);
     return () => {

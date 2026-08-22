@@ -467,14 +467,6 @@ function buildShopMarkup(products: ShopProduct[], categories: ShopCategory[]) {
 
   <div class="overlay" data-overlay></div>
 
-  <section class="search-panel" aria-label="Search products" data-search-panel>
-    <form action="/shop">
-      <input type="search" placeholder="Search KM products">
-      <button type="submit">Search</button>
-    </form>
-    <button class="panel-close" type="button" aria-label="Close search" data-close-panels>×</button>
-  </section>
-
   <aside class="cart-drawer" aria-label="Shopping cart" data-cart-drawer>
     <button class="panel-close" type="button" aria-label="Close cart" data-close-panels>×</button>
     <span>Your Cart</span>
