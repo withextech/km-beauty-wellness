@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { medusaRequest } from "../lib/browser-medusa";
 
 export type ProductModalVariant = {
   id: string;
@@ -36,10 +37,11 @@ export type ProductModalData = {
 
 type Review = {
   id: string;
-  name: string;
+  customer_name: string;
   rating: number;
   comment: string;
-  createdAt: string;
+  created_at: string;
+  images: string[];
 };
 
 const money = new Intl.NumberFormat("en-PH", {
@@ -56,15 +58,6 @@ const skinTypeLabels: Record<string, string> = {
   sensitive: "Sensitive skin",
   normal: "Normal skin",
 };
-
-function getStoredReviews(productId: string): Review[] {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(`km-product-reviews:${productId}`) || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export function ProductDetailsModal({ products }: { products: ProductModalData[] }) {
   const [productId, setProductId] = useState<string | null>(null);
@@ -85,7 +78,8 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
       setProductId(id);
       setImage(selected.image);
       setVariantId(selected.variants[0]?.id || "");
-      setReviews(getStoredReviews(id));
+      setReviews([]);
+      medusaRequest<{ reviews: Review[] }>(`/store/reviews?product_id=${encodeURIComponent(id)}`).then((data) => setReviews(data.reviews || [])).catch(() => setReviews([]));
     };
     const click = (event: MouseEvent) => {
       const target = event.target as Element;
@@ -210,7 +204,7 @@ export function ProductDetailsModal({ products }: { products: ProductModalData[]
           </div>
           <div className="product-reviews-grid product-reviews-readonly">
             <div className="product-review-list">
-              {reviews.length ? reviews.map((review) => <article key={review.id}><div><b>{review.name.slice(0, 1).toUpperCase()}</b><p><strong>{review.name}</strong><span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span></p><time>{new Date(review.createdAt).toLocaleDateString("en-PH", { dateStyle: "medium" })}</time></div><p>{review.comment}</p></article>) : <div className="product-review-empty"><b>No customer reviews yet.</b><p>Verified customers can review this product from My Orders after delivery.</p></div>}
+              {reviews.length ? reviews.map((review) => <article key={review.id}><div><b>{review.customer_name.slice(0, 1).toUpperCase()}</b><p><strong>{review.customer_name}</strong><span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span></p><time>{new Date(review.created_at).toLocaleDateString("en-PH", { dateStyle: "medium" })}</time></div><p>{review.comment}</p>{review.images?.length ? <div className="product-review-images">{review.images.map((url) => <a href={url} target="_blank" rel="noreferrer" key={url}><img src={url} alt="Customer review" /></a>)}</div> : null}</article>) : <div className="product-review-empty"><b>No customer reviews yet.</b><p>Verified customers can review this product from My Orders after delivery.</p></div>}
             </div>
           </div>
         </section>

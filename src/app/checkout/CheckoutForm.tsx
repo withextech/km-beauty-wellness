@@ -2,15 +2,21 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { customerToken, medusaRequest } from "../lib/browser-medusa";
+import { PhilippineAddressFields } from "../components/PhilippineAddressFields";
 
 type CartLine = { variantId: string; name: string; image?: string; price: number; quantity: number };
+type CheckoutAddress = { first_name?: string; last_name?: string; phone?: string; address_1?: string; address_2?: string; city?: string; province?: string; postal_code?: string; is_default_shipping?: boolean };
+type CheckoutCustomer = { first_name?: string; last_name?: string; email: string; phone?: string; addresses?: CheckoutAddress[] };
 const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" });
 
 export function CheckoutForm() {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState(false);
-  const [dummyPayment, setDummyPayment] = useState<{ address: Record<string, string>; orderNumber: number } | null>(null);
+  const [dummyPayment, setDummyPayment] = useState<{ address: Record<string, string>; voucherCode: string; orderNumber: number } | null>(null);
+  const [customer, setCustomer] = useState<CheckoutCustomer | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<"profile" | "other">("other");
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -22,8 +28,20 @@ export function CheckoutForm() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
+  useEffect(() => {
+    const token = customerToken();
+    if (!token) return;
+    medusaRequest<{ customer: CheckoutCustomer }>("/store/customers/me?fields=*addresses", {}, token)
+      .then(({ customer: profile }) => { setCustomer(profile); setDeliveryMode("profile"); })
+      .catch(() => localStorage.removeItem("km-customer-token"));
+  }, []);
+
   const subtotal = useMemo(() => lines.reduce((sum, line) => sum + line.price * line.quantity, 0), [lines]);
   const total = subtotal;
+  const savedAddress = customer?.addresses?.find((address) => address.is_default_shipping) || customer?.addresses?.[0];
+  const deliveryDefaults = deliveryMode === "profile" && customer ? {
+    first_name: customer.first_name || savedAddress?.first_name || "", last_name: customer.last_name || savedAddress?.last_name || "", email: customer.email || "", phone: customer.phone || savedAddress?.phone || "", address_1: savedAddress?.address_1 || "", barangay: savedAddress?.address_2 || "", city: savedAddress?.city || "", province: savedAddress?.province || "", postal_code: savedAddress?.postal_code || "",
+  } : { first_name: "", last_name: "", email: "", phone: "", address_1: "", barangay: "", city: "", province: "", postal_code: "" };
 
   function placeOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -31,7 +49,8 @@ export function CheckoutForm() {
     setPending(true); setMessage("");
     const form = new FormData(event.currentTarget);
     const address = Object.fromEntries(["first_name", "last_name", "email", "phone", "address_1", "barangay", "city", "province", "postal_code"].map((key) => [key, String(form.get(key) || "")]));
-    setDummyPayment({ address, orderNumber: Number(String(Date.now()).slice(-6)) });
+    const voucherCode = String(form.get("voucher_code") || "").trim().toUpperCase();
+    setDummyPayment({ address, voucherCode, orderNumber: Number(String(Date.now()).slice(-6)) });
     setPending(false);
   }
 
@@ -42,7 +61,7 @@ export function CheckoutForm() {
       const response = await fetch("/api/checkout/place-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: dummyPayment.address, lines }),
+        body: JSON.stringify({ address: dummyPayment.address, lines, voucher_code: dummyPayment.voucherCode, customer_token: localStorage.getItem("km-customer-token") || "" }),
       });
       const result = await response.json() as { display_id?: number | string; message?: string; order_id?: string };
       if (!response.ok || !result.order_id) throw new Error(result.message || "Unable to place your order.");
@@ -60,16 +79,19 @@ export function CheckoutForm() {
   return <section className="checkout-card checkout-premium">
     <header className="checkout-heading"><Link className="continue-shopping-button" href="/shop">Continue shopping</Link><span>Secure checkout</span><h1>Complete your order</h1><p>Enter your delivery details, review your items, then continue to QR Ph payment.</p></header>
     <div className="checkout-layout">
-      <form onSubmit={placeOrder}>
+      <form key={`${deliveryMode}-${customer?.email || "guest"}`} onSubmit={placeOrder}>
         <div className="checkout-section-title"><b>1</b><div><h2>Delivery information</h2><p>Where should we send your KM Beauty order?</p></div></div>
-        <div className="auth-name-grid"><label>First name<input name="first_name" autoComplete="given-name" required /></label><label>Last name<input name="last_name" autoComplete="family-name" required /></label></div>
-        <label>Email address<input name="email" type="email" autoComplete="email" required /></label><label>Mobile number<input name="phone" autoComplete="tel" required /></label><label>Street address<input name="address_1" autoComplete="street-address" required /></label><label>Barangay<input name="barangay" required /></label>
-        <div className="auth-name-grid"><label>City / Municipality<input name="city" autoComplete="address-level2" required /></label><label>Province<input name="province" autoComplete="address-level1" required /></label></div><label>Postal code<input name="postal_code" inputMode="numeric" autoComplete="postal-code" required /></label>
+        {customer ? <div className="checkout-address-choice" role="radiogroup" aria-label="Delivery address choice"><button className={deliveryMode === "profile" ? "active" : ""} type="button" role="radio" aria-checked={deliveryMode === "profile"} onClick={() => setDeliveryMode("profile")}><b>Use saved profile</b><span>{savedAddress ? [savedAddress.address_1, savedAddress.city].filter(Boolean).join(", ") : "Complete your saved delivery address"}</span></button><button className={deliveryMode === "other" ? "active" : ""} type="button" role="radio" aria-checked={deliveryMode === "other"} onClick={() => setDeliveryMode("other")}><b>Ship to someone else</b><span>Enter another recipient and address</span></button></div> : null}
+        {customer && deliveryMode === "profile" && !savedAddress ? <p className="checkout-profile-warning">Your profile has no saved address yet. Fill it in here or <Link href="/account?view=profile">save it in Profile Settings</Link>.</p> : null}
+        <div className="auth-name-grid"><label>First name<input name="first_name" defaultValue={deliveryDefaults.first_name} autoComplete="given-name" required /></label><label>Last name<input name="last_name" defaultValue={deliveryDefaults.last_name} autoComplete="family-name" required /></label></div>
+        <label>Email address<input name="email" defaultValue={deliveryDefaults.email} type="email" autoComplete="email" required /></label><label>Mobile number<input name="phone" defaultValue={deliveryDefaults.phone} autoComplete="tel" required /></label>
+        <PhilippineAddressFields defaults={deliveryDefaults} />
         <div className="checkout-payment-options" aria-label="Payment method">
           <div className="checkout-payment-title"><span>2</span><div><strong>Payment method</strong><small>Choose how you want to pay</small></div></div>
           <div className="checkout-payment-method selected"><div className="qrph-mark"><img src="/assets/qrph-logo.svg" alt="QR Ph" /></div><div><strong>QR Ph</strong><p>Scan using GCash, Maya, or a participating banking app.</p></div><b>Selected</b></div>
           <div className="checkout-payment-method disabled" aria-disabled="true"><div className="cod-mark"><svg viewBox="0 0 48 48" aria-hidden="true"><rect x="5" y="12" width="38" height="25" rx="4" /><circle cx="24" cy="24.5" r="6" /><path d="M10 17c3 0 5-2 5-5M38 17c-3 0-5-2-5-5M10 32c3 0 5 2 5 5M38 32c-3 0-5 2-5 5" /></svg></div><div><strong>Cash on Delivery (COD)</strong><p>Payment upon delivery is not available yet.</p></div><b>Unavailable</b></div>
         </div>
+        <label className="checkout-voucher-field"><span>Voucher code <small>Optional</small></span><div><input name="voucher_code" placeholder="Enter voucher code" autoCapitalize="characters" /><b>Applied when order is created</b></div></label>
         <button disabled={pending || !lines.length} type="submit">{pending ? "Preparing secure payment…" : `Continue to QR Ph · ${peso.format(total)}`}</button>
         <small className="checkout-secure-note">You’ll continue to a secure QR Ph payment page.</small>
       </form>

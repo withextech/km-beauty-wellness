@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { customerToken, medusaRequest } from "../lib/browser-medusa";
+import { customerToken, medusaRequest, MEDUSA_URL, PUBLISHABLE_KEY } from "../lib/browser-medusa";
+import { PhilippineAddressFields } from "../components/PhilippineAddressFields";
 
 type Address = {
+  id?: string;
   first_name?: string;
   last_name?: string;
   phone?: string;
@@ -13,6 +15,8 @@ type Address = {
   city?: string;
   province?: string;
   postal_code?: string;
+  country_code?: string;
+  is_default_shipping?: boolean;
 };
 
 type Order = {
@@ -36,7 +40,7 @@ type Order = {
   }>;
 };
 
-type Customer = { first_name?: string; last_name?: string; email: string; phone?: string };
+type Customer = { first_name?: string; last_name?: string; email: string; phone?: string; addresses?: Address[] };
 type OrderItem = NonNullable<Order["items"]>[number];
 type Filter = "all" | "to-pay" | "to-ship" | "to-receive" | "to-review" | "returns";
 
@@ -125,6 +129,7 @@ export function AccountPortal() {
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [view, setView] = useState<"orders" | "profile">("orders");
 
   const fetchOrders = useCallback(async (nextOffset: number, token: string) => {
     const fields = "id,display_id,created_at,total,subtotal,shipping_total,discount_total,currency_code,fulfillment_status,payment_status,*items,*fulfillments,*fulfillments.labels,*shipping_address";
@@ -142,12 +147,18 @@ export function AccountPortal() {
           setMessage("");
         });
       }
-      return;
+      const timer = window.setTimeout(() => {
+        const trigger = document.querySelector<HTMLElement>(".account-avatar-button, [data-open-account]");
+        if (trigger) document.dispatchEvent(new CustomEvent("km-open-customer-login", { detail: { trigger } }));
+      }, 100);
+      return () => window.clearTimeout(timer);
     }
+    const requestedView = new URLSearchParams(window.location.search).get("view") === "profile" ? "profile" : "orders";
     Promise.all([
-      medusaRequest<{ customer: Customer }>("/store/customers/me", {}, token),
+      medusaRequest<{ customer: Customer }>("/store/customers/me?fields=*addresses", {}, token),
       fetchOrders(0, token),
     ]).then(([profile, orderData]) => {
+      setView(requestedView);
       const firstPage = orderData.orders || [];
       setCustomer(profile.customer);
       setOrders([...dummyOrders(), ...firstPage]);
@@ -188,7 +199,7 @@ export function AccountPortal() {
           <p>KM Beauty account</p>
           <h1>Track every order in one place</h1>
           <p>Sign in to see delivery updates, purchases, returns, points, and coupons.</p>
-          <div><Link href="/login">Log in</Link><Link href="/register">Create account</Link></div>
+          <div><button type="button" data-open-account>Log in or register</button></div>
           {message !== "Log in to view your profile and orders." ? <small className="auth-message">{message}</small> : null}
         </section>
       </main>
@@ -198,6 +209,11 @@ export function AccountPortal() {
   return (
     <main className="account-page shop-account-page">
       <section className="shop-account-shell">
+        <nav className="account-portal-tabs" aria-label="Customer account sections">
+          <button className={view === "orders" ? "active" : ""} onClick={() => setView("orders")} type="button">My orders</button>
+          <button className={view === "profile" ? "active" : ""} onClick={() => setView("profile")} type="button">Profile settings</button>
+        </nav>
+        {view === "profile" ? <ProfileSettings customer={customer} onSaved={setCustomer} /> : <>
         <header className="shop-account-heading">
           <div><span>Order center</span><h1>My Orders</h1></div>
           <Link href="/shop">Continue shopping <span aria-hidden="true">›</span></Link>
@@ -245,12 +261,53 @@ export function AccountPortal() {
           )}
           {hasMore && activeFilter === "all" ? <button className="shop-load-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? "Loading orders…" : "Load more orders"}</button> : null}
         </section>
+        </>}
       </section>
 
       {selectedOrder ? <OrderDrawer order={selectedOrder} onClose={() => setSelectedOrder(null)} onReview={(item) => setReviewItem({ item, order: selectedOrder })} /> : null}
       {reviewItem ? <AccountReviewModal customer={customer} item={reviewItem.item} order={reviewItem.order} onClose={() => setReviewItem(null)} /> : null}
     </main>
   );
+}
+
+function ProfileSettings({ customer, onSaved }: { customer: Customer; onSaved: (customer: Customer) => void }) {
+  const savedAddress = customer.addresses?.find((address) => address.is_default_shipping) || customer.addresses?.[0];
+  const [pending, setPending] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const token = customerToken();
+    if (!token) return;
+    setPending(true);
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const profile = { first_name: String(form.get("first_name") || "").trim(), last_name: String(form.get("last_name") || "").trim(), phone: String(form.get("phone") || "").trim() };
+    const address = { first_name: profile.first_name, last_name: profile.last_name, phone: profile.phone, address_1: String(form.get("address_1") || "").trim(), address_2: String(form.get("barangay") || "").trim(), city: String(form.get("city") || "").trim(), province: String(form.get("province") || "").trim(), postal_code: String(form.get("postal_code") || "").trim(), country_code: "ph", is_default_shipping: true };
+    try {
+      await medusaRequest("/store/customers/me", { method: "POST", body: JSON.stringify(profile) }, token);
+      if (savedAddress?.id) await medusaRequest(`/store/customers/me/addresses/${savedAddress.id}`, { method: "POST", body: JSON.stringify(address) }, token);
+      else await medusaRequest("/store/customers/me/addresses", { method: "POST", body: JSON.stringify(address) }, token);
+      const refreshed = await medusaRequest<{ customer: Customer }>("/store/customers/me?fields=*addresses", {}, token);
+      onSaved(refreshed.customer);
+      setMessage("Profile and delivery details saved.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save your profile."); }
+    finally { setPending(false); }
+  }
+
+  return <section className="profile-settings">
+    <header><span>My account</span><h1>Profile settings</h1><p>These details will be ready for you during checkout.</p></header>
+    <form onSubmit={saveProfile}>
+      <div className="profile-form-section"><h2>Contact details</h2><p>Used for order updates and delivery coordination.</p></div>
+      <div className="auth-name-grid"><label>First name<input name="first_name" defaultValue={customer.first_name || ""} required /></label><label>Last name<input name="last_name" defaultValue={customer.last_name || ""} required /></label></div>
+      <label>Email address<input value={customer.email} disabled type="email" /><small>Your verified login email cannot be changed here.</small></label>
+      <label>Mobile number<input name="phone" defaultValue={customer.phone || savedAddress?.phone || ""} autoComplete="tel" required /></label>
+      <div className="profile-form-section"><h2>Default delivery address</h2><p>You can still choose a different recipient or address at checkout.</p></div>
+      <PhilippineAddressFields defaults={{ address_1: savedAddress?.address_1, barangay: savedAddress?.address_2, city: savedAddress?.city, province: savedAddress?.province, postal_code: savedAddress?.postal_code }} />
+      <button disabled={pending} type="submit">{pending ? "Saving..." : "Save profile"}</button>
+      {message ? <p className="auth-message">{message}</p> : null}
+    </form>
+  </section>;
 }
 
 function OrderDrawer({ order, onClose, onReview }: { order: Order; onClose: () => void; onReview: (item: OrderItem) => void }) {
@@ -288,32 +345,22 @@ function OrderDrawer({ order, onClose, onReview }: { order: Order; onClose: () =
 function AccountReviewModal({ customer, item, order, onClose }: { customer: Customer; item: OrderItem; order: Order; onClose: () => void }) {
   const [rating, setRating] = useState(5);
   const [submitted, setSubmitted] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const productId = item.product_id || item.variant_id || item.id;
 
-  function submitReview(event: FormEvent<HTMLFormElement>) {
+  async function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const comment = String(form.get("comment") || "").trim();
     if (comment.length < 10) return;
-    const storageKey = `km-product-reviews:${productId}`;
-    let current: Array<Record<string, unknown>> = [];
+    setPending(true); setError("");
+    form.set("product_id", productId); form.set("product_title", item.title); form.set("order_id", order.id); form.set("order_item_id", item.id); form.set("rating", String(rating));
     try {
-      const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
-      current = Array.isArray(parsed) ? parsed : [];
-    } catch {}
-    const review = {
-      id: crypto.randomUUID(),
-      orderId: order.id,
-      orderItemId: item.id,
-      name: [customer.first_name, customer.last_name].filter(Boolean).join(" ") || "Verified customer",
-      rating,
-      comment,
-      createdAt: new Date().toISOString(),
-      verifiedPurchase: true,
-    };
-    const withoutPrevious = current.filter((entry) => entry.orderItemId !== item.id);
-    localStorage.setItem(storageKey, JSON.stringify([review, ...withoutPrevious]));
-    setSubmitted(true);
+      const response = await fetch(`${MEDUSA_URL}/store/reviews`, { method: "POST", headers: { "x-publishable-api-key": PUBLISHABLE_KEY, Authorization: `Bearer ${customerToken()}` }, body: form });
+      const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.message || "Unable to submit review."); setSubmitted(true);
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to submit review."); }
+    finally { setPending(false); }
   }
 
   return <div className="account-review-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -321,10 +368,11 @@ function AccountReviewModal({ customer, item, order, onClose }: { customer: Cust
       <button className="account-review-close" type="button" onClick={onClose} aria-label="Close review form">×</button>
       <span>Verified purchase · Order #{order.display_id}</span>
       <h2 id="account-review-title">Review {item.title}</h2>
-      {submitted ? <div className="account-review-thanks"><b>Thank you for your review!</b><p>Your rating is now available on the product’s shop details.</p><button type="button" onClick={onClose}>Done</button></div> : <form onSubmit={submitReview}>
+      {submitted ? <div className="account-review-thanks"><b>Thank you for your review!</b><p>Your review was submitted and will appear after approval.</p><button type="button" onClick={onClose}>Done</button></div> : <form onSubmit={submitReview}>
         <fieldset><legend>Your rating</legend><div className="product-review-stars">{[1, 2, 3, 4, 5].map((value) => <button aria-label={`${value} star${value === 1 ? "" : "s"}`} className={value <= rating ? "active" : ""} key={value} onClick={() => setRating(value)} type="button">★</button>)}</div></fieldset>
         <label>Your review<textarea name="comment" minLength={10} placeholder="Tell other customers about the product, texture, and results…" required /></label>
-        <button type="submit">Submit verified review</button>
+        <label>Photos <small>Optional · up to 5 images</small><input accept="image/*" multiple name="images" type="file" /></label>{error ? <p className="auth-message">{error}</p> : null}
+        <button disabled={pending} type="submit">{pending ? "Submitting…" : "Submit verified review"}</button>
       </form>}
     </section>
   </div>;

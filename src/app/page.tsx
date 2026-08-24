@@ -1,6 +1,9 @@
 import Script from "next/script";
 import { escapeHtml, getHomepageCms, getStoreProducts, productButton, type StoreProduct } from "./lib/store-data";
 import { ProductDetailsModal } from "./shop/ProductDetailsModal";
+import { serverMedusaRequest } from "./lib/server-medusa";
+
+type FeaturedReview = { id: string; product_title: string; customer_name: string; rating: number; comment: string; images: string[] };
 
 function renderFlashProducts(products: StoreProduct[]) {
   if (!products.length) return `<p class="storefront-empty">No flash-sale products selected.</p>`;
@@ -16,7 +19,7 @@ function renderDiscoverProducts(products: StoreProduct[]) {
   return products.map((product) => { const discount = product.originalPrice > product.price ? Math.round((1 - product.price / product.originalPrice) * 100) : 0; const soldOut = product.inventoryQuantity < 1; return `<article class="product-card${soldOut ? " is-sold-out" : ""}" role="button" tabindex="0" aria-label="View details for ${escapeHtml(product.title)}" data-product-id="${escapeHtml(product.id)}"><div class="product-art">${soldOut ? `<b class="stock-badge">Out of stock</b>` : ""}<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.title)}"></div><span class="product-card-brand">${escapeHtml(product.brand)}</span><h3>${escapeHtml(product.title)}</h3><p>${discount ? `<strong>${product.priceLabel}</strong> <s>₱${product.originalPrice.toLocaleString("en-PH")}</s> <em class="product-discount">${discount}% OFF</em>` : product.priceLabel}</p><button type="button" ${productButton(product)} ${soldOut ? "disabled" : ""}>${soldOut ? "Out of stock" : "Add to cart"}</button></article>`; }).join("");
 }
 
-function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null, heroImages: string[], discoverImage: string | null) {
+function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreProduct[], saleEndsAt: string | null, heroImages: string[], discoverImage: string | null, featuredReviews: FeaturedReview[]) {
   const hero = ["/assets/hero-herskin-clean.jpg", "/assets/hero-founder-clean.jpg", "/assets/hero-sunblush-clean.png", "/assets/hero-neko-product.png"].map((fallback, index) => heroImages[index] || fallback);
   return `
   <header class="header home-header">
@@ -141,24 +144,7 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
         <h2>Loved by everyday glow-getters</h2>
       </div>
       <div class="journal-grid">
-        <article>
-          <span>★★★★★</span>
-          <h3>My skin feels fresh without feeling heavy.</h3>
-          <p>The water gel and toner combo became my daily routine. It looks clean, smells soft, and feels perfect for humid days.</p>
-          <b>Angelica M.</b>
-        </article>
-        <article>
-          <span>★★★★★</span>
-          <h3>The sun care products are easy to recommend.</h3>
-          <p>No sticky finish, no dull cast, and it layers well under makeup. I added another tube to my cart right away.</p>
-          <b>Rica S.</b>
-        </article>
-        <article>
-          <span>★★★★★</span>
-          <h3>Checkout feels like browsing a boutique.</h3>
-          <p>I like seeing the best sellers, sale prices, and cart updates instantly. Everything feels polished and easy to shop.</p>
-          <b>Marielle T.</b>
-        </article>
+        ${featuredReviews.length ? featuredReviews.slice(0, 6).map((review) => `<article>${review.images?.[0] ? `<img class="featured-review-photo" src="${escapeHtml(review.images[0])}" alt="Customer review photo">` : ""}<span>${"★".repeat(review.rating)}${"☆".repeat(5-review.rating)}</span><h3>${escapeHtml(review.product_title)}</h3><p>${escapeHtml(review.comment)}</p><b>${escapeHtml(review.customer_name)}</b></article>`).join("") : `<p class="storefront-empty">Featured customer reviews will appear here.</p>`}
       </div>
     </section>
   </main>
@@ -197,13 +183,13 @@ function glowhouseMarkup(flashProducts: StoreProduct[], discoverProducts: StoreP
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [products, cms] = await Promise.all([getStoreProducts(), getHomepageCms()]);
+  const [products, cms, featured] = await Promise.all([getStoreProducts(), getHomepageCms(), serverMedusaRequest<{ reviews: FeaturedReview[] }>("/store/reviews?featured=true").catch(() => ({ reviews: [] }))]);
   const byId = new Map(products.map((product) => [product.id, product]));
   const flashProducts = cms.flash_sale_product_ids.map((id) => byId.get(id)).filter((product): product is StoreProduct => Boolean(product));
   const discoverProducts = cms.discover_product_ids.map((id) => byId.get(id)).filter((product): product is StoreProduct => Boolean(product));
   return (
     <>
-      <div dangerouslySetInnerHTML={{ __html: glowhouseMarkup(flashProducts, discoverProducts, cms.flash_sale_ends_at, cms.hero_images, cms.discover_image) }} />
+      <div dangerouslySetInnerHTML={{ __html: glowhouseMarkup(flashProducts, discoverProducts, cms.flash_sale_ends_at, cms.hero_images, cms.discover_image, featured.reviews) }} />
       <ProductDetailsModal products={[...flashProducts, ...discoverProducts].filter((product, index, all) => all.findIndex((item) => item.id === product.id) === index).map((product) => product.modal)} />
       <Script src="/glowhouse-app.js" strategy="afterInteractive" />
     </>

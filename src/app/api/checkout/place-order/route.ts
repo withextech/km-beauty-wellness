@@ -13,7 +13,9 @@ function requiredText(address: CheckoutAddress, key: string) {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { address?: CheckoutAddress; lines?: CheckoutLine[] };
+    const body = (await request.json()) as { address?: CheckoutAddress; lines?: CheckoutLine[]; voucher_code?: unknown; customer_token?: unknown };
+    const customerToken = typeof body.customer_token === "string" && body.customer_token.length < 4096 ? body.customer_token.trim() : "";
+    const customerHeaders: Record<string, string> = customerToken ? { Authorization: `Bearer ${customerToken}` } : {};
     const lines = Array.isArray(body.lines)
       ? body.lines.map((line) => ({
           quantity: Math.max(1, Math.min(99, Math.floor(Number(line.quantity)))),
@@ -50,30 +52,41 @@ export async function POST(request: Request) {
     };
 
     const created = await serverMedusaRequest<{ cart: MedusaCart }>("/store/carts", {
-      method: "POST", body: JSON.stringify({ email, region_id: regionId, shipping_address: shippingAddress }),
+      method: "POST", headers: customerHeaders, body: JSON.stringify({ email, region_id: regionId, shipping_address: shippingAddress }),
     });
     const cartId = created.cart.id;
     for (const line of lines) {
-      await serverMedusaRequest(`/store/carts/${cartId}/line-items`, { method: "POST", body: JSON.stringify(line) });
+      await serverMedusaRequest(`/store/carts/${cartId}/line-items`, { method: "POST", headers: customerHeaders, body: JSON.stringify(line) });
     }
 
     const shipping = await serverMedusaRequest<{ shipping_options: Array<{ id: string }> }>(`/store/shipping-options?cart_id=${encodeURIComponent(cartId)}`);
     if (!shipping.shipping_options[0]) throw new Error("Shipping is not available for this delivery address.");
     await serverMedusaRequest(`/store/carts/${cartId}/shipping-methods`, {
-      method: "POST", body: JSON.stringify({ option_id: shipping.shipping_options[0].id }),
+      method: "POST", headers: customerHeaders, body: JSON.stringify({ option_id: shipping.shipping_options[0].id }),
     });
 
-    const cartData = await serverMedusaRequest<{ cart: MedusaCart }>(`/store/carts/${cartId}?fields=+payment_collection.*,+payment_collection.payment_sessions.*`);
+    const voucherCode = typeof body.voucher_code === "string" ? body.voucher_code.trim().toUpperCase() : "";
+    if (voucherCode) {
+      try {
+        await serverMedusaRequest(`/store/carts/${cartId}/promotions`, {
+          method: "POST", headers: customerHeaders, body: JSON.stringify({ promo_codes: [voucherCode] }),
+        });
+      } catch {
+        return Response.json({ message: "This voucher is invalid, expired, unavailable to this account, or has reached its redemption limit." }, { status: 400 });
+      }
+    }
+
+    const cartData = await serverMedusaRequest<{ cart: MedusaCart }>(`/store/carts/${cartId}?fields=+payment_collection.*,+payment_collection.payment_sessions.*`, { headers: customerHeaders });
     const paymentCollection = cartData.cart.payment_collection || (await serverMedusaRequest<{ payment_collection: { id: string; payment_sessions?: unknown[] } }>(
-      "/store/payment-collections", { method: "POST", body: JSON.stringify({ cart_id: cartId }) },
+      "/store/payment-collections", { method: "POST", headers: customerHeaders, body: JSON.stringify({ cart_id: cartId }) },
     )).payment_collection;
     if (!paymentCollection.payment_sessions?.length) {
       await serverMedusaRequest(`/store/payment-collections/${paymentCollection.id}/payment-sessions`, {
-        method: "POST", body: JSON.stringify({ provider_id: "pp_system_default" }),
+        method: "POST", headers: customerHeaders, body: JSON.stringify({ provider_id: "pp_system_default" }),
       });
     }
 
-    const completed = await serverMedusaRequest<CompleteCartResponse>(`/store/carts/${cartId}/complete`, { method: "POST", body: "{}" });
+    const completed = await serverMedusaRequest<CompleteCartResponse>(`/store/carts/${cartId}/complete`, { method: "POST", headers: customerHeaders, body: "{}" });
     if (!completed.order?.id) throw new Error("Medusa did not return the completed order.");
     return Response.json({ cart_id: cartId, display_id: completed.order.display_id || "", order_id: completed.order.id });
   } catch (error) {

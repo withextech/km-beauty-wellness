@@ -26,7 +26,8 @@ export function AccountMenu() {
       {isOpen ? (
         <div className="account-dropdown">
           <div className="account-dropdown-head"><b>Customer account</b></div>
-          <a href="/account">Profile and orders</a>
+          <a href="/account">My orders</a>
+          <a href="/account?view=profile">Profile settings</a>
           <div className="account-menu-divider" />
           <a href="/contact?topic=faq">FAQ</a>
           <a href="/terms">Terms and Conditions</a>
