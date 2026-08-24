@@ -29,7 +29,7 @@ export function PhilippineAddressFields({ defaults = {} }: { defaults?: AddressD
     </div>
     <div className="auth-name-grid">
       <label>Barangay<select name="barangay" value={barangay} required disabled={!cityCode || loading} onChange={(event) => setBarangay(event.target.value)}><option value="">{city ? "Select barangay" : "Select city first"}</option>{barangays.map((item) => <option key={item.code} value={item.name}>{item.name}</option>)}</select></label>
-      <label>Postal code<input name="postal_code" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} inputMode="numeric" autoComplete="postal-code" required /></label>
+      <label>ZIP Code<input name="postal_code" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} inputMode="numeric" autoComplete="postal-code" required /></label>
     </div>
     <label>House/unit, street & delivery instructions<textarea name="address_1" defaultValue={defaults.address_1 || ""} autoComplete="street-address" placeholder="House or unit number, street, subdivision, landmark, or special delivery instructions" required /></label>
     {error ? <p className="ph-address-error">{error} Please refresh and try again.</p> : null}
