@@ -11,7 +11,6 @@ export function StoreAccountAccess() {
   const [position, setPosition] = useState<PopoverPosition>({ right: 18, top: 76 });
   const [loginMessage, setLoginMessage] = useState("");
   const [registerMessage, setRegisterMessage] = useState("");
-  const [developmentUrl, setDevelopmentUrl] = useState("");
   const [pending, setPending] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -90,14 +89,6 @@ export function StoreAccountAccess() {
         method: "POST",
         body: JSON.stringify({ email: form.get("email"), password: form.get("password") }),
       });
-      const data = await medusaRequest<{
-        customer: { metadata?: { email_verified?: boolean } };
-      }>("/store/customers/me", {}, auth.token);
-
-      if (!data.customer.metadata?.email_verified) {
-        throw new Error("Confirm your email address before logging in.");
-      }
-
       localStorage.setItem("km-customer-token", auth.token);
       window.location.href = "/account";
     } catch (error) {
@@ -110,7 +101,6 @@ export function StoreAccountAccess() {
     event.preventDefault();
     setPending(true);
     setRegisterMessage("");
-    setDevelopmentUrl("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
     const email = String(form.get("email") || "").trim().toLowerCase();
@@ -140,14 +130,8 @@ export function StoreAccountAccess() {
           body: JSON.stringify({ email, password: form.get("password") }),
         },
       );
-      const result = await medusaRequest<{ development_url?: string }>(
-        "/store/customer-verification/request",
-        { method: "POST", body: "{}" },
-        linkedAuth.token,
-      );
-      setDevelopmentUrl(result.development_url || "");
-      setRegisterMessage("Registration successful. Check your email to confirm your account.");
-      formElement.reset();
+      localStorage.setItem("km-customer-token", linkedAuth.token);
+      window.location.href = "/account";
     } catch (error) {
       setRegisterMessage(error instanceof Error ? error.message : "Registration failed.");
     } finally {
@@ -211,7 +195,7 @@ export function StoreAccountAccess() {
             </button>
             <span className="eyebrow">New customer</span>
             <h2 id="store-register-title">Create your account</h2>
-            <p className="store-register-intro">We’ll email you a confirmation link to activate it.</p>
+            <p className="store-register-intro">Create an account to track orders and save your delivery details.</p>
             <form onSubmit={register}>
               <div className="store-register-names">
                 <label>First name<input name="first_name" required /></label>
@@ -223,7 +207,6 @@ export function StoreAccountAccess() {
               <button disabled={pending} type="submit">{pending ? "Creating…" : "Create account"}</button>
             </form>
             {registerMessage ? <p className="store-account-message">{registerMessage}</p> : null}
-            {developmentUrl ? <a className="development-link" href={developmentUrl}>Open confirmation link (development only)</a> : null}
             <p className="store-account-switch">Already registered? <button onClick={() => { setRegisterOpen(false); setLoginOpen(true); }} type="button">Log in</button></p>
           </section>
         </div>

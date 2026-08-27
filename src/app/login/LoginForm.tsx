@@ -9,8 +9,6 @@ export function LoginForm() {
     event.preventDefault(); setPending(true); setMessage(""); const form = new FormData(event.currentTarget);
     try {
       const auth = await medusaRequest<{ token: string }>("/auth/customer/emailpass", { method: "POST", body: JSON.stringify({ email: form.get("email"), password: form.get("password") }) });
-      const data = await medusaRequest<{ customer: { metadata?: { email_verified?: boolean } } }>("/store/customers/me", {}, auth.token);
-      if (!data.customer.metadata?.email_verified) throw new Error("Confirm your email address before logging in.");
       localStorage.setItem("km-customer-token", auth.token); window.location.href = "/account";
     } catch (error) { setMessage(error instanceof Error ? error.message : "Login failed."); setPending(false); }
   }
