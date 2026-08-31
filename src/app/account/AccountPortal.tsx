@@ -165,7 +165,21 @@ export function AccountPortal() {
       setOffset(firstPage.length);
       setHasMore(firstPage.length === PAGE_SIZE && (orderData.count === undefined || firstPage.length < orderData.count));
       setMessage("");
-    }).catch((error) => setMessage(error instanceof Error ? error.message : "Unable to load your account."));
+    }).catch((error) => {
+      const errorMessage = error instanceof Error ? error.message : "Unable to load your account.";
+      const invalidSession = /unauthorized|not authenticated|invalid token|jwt/i.test(errorMessage);
+      if (!invalidSession) {
+        setMessage(errorMessage);
+        return;
+      }
+      localStorage.removeItem("km-customer-token");
+      setCustomer(null);
+      setMessage("Log in to view your profile and orders.");
+      window.setTimeout(() => {
+        const trigger = document.querySelector<HTMLElement>(".account-avatar-button, [data-open-account]");
+        if (trigger) document.dispatchEvent(new CustomEvent("km-open-customer-login", { detail: { trigger } }));
+      }, 0);
+    });
   }, [fetchOrders]);
 
   useEffect(() => {

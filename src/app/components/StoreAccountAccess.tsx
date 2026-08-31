@@ -60,7 +60,14 @@ export function StoreAccountAccess() {
     document.addEventListener("click", openLogin);
     document.addEventListener("click", closeOutside);
     document.addEventListener("km-open-customer-login", openFromAccountPage);
+    const accountPageTimer = !loginOpen && window.location.pathname === "/account" && !localStorage.getItem("km-customer-token")
+      ? window.setTimeout(() => {
+          const trigger = document.querySelector<HTMLElement>(".account-avatar-button, [data-open-account]");
+          if (trigger) showLogin(trigger);
+        }, 100)
+      : undefined;
     return () => {
+      if (accountPageTimer) window.clearTimeout(accountPageTimer);
       document.removeEventListener("click", openLogin);
       document.removeEventListener("click", closeOutside);
       document.removeEventListener("km-open-customer-login", openFromAccountPage);
